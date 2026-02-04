@@ -1,13 +1,16 @@
 // reportScraper.js
 import puppeteer from 'puppeteer';
 import ReportPage from './reportPage.js';
-import { delay } from './utils.js';
+import { delay } from '../../shared/utils.js';
 import ReportValueExtractor from './reportValueExtractor.js';
 import ReportResult from './reportResult.js';
+import ReportRowParser from './ReportRowParser.js';
+import Logger from '../../shared/logger.js';
 
 /**
  * Orchestrates the scraping process for the report page.
  * Handles browser lifecycle, navigation, and delegates value extraction.
+ * @class ReportScraper
  */
 class ReportScraper {
   constructor(isin) {
@@ -46,7 +49,7 @@ class ReportScraper {
   /**
    * Logs the currency value using the extraction logic from ReportValueExtractor.
    */
-  async logCurrencyValue() {
+  async parseCurrencyValue() {
     const currencyValue = await ReportValueExtractor.extractCurrencyValue(this.reportPage.page);
     if (currencyValue) {
       if (!this.result) {
@@ -54,9 +57,9 @@ class ReportScraper {
       } else {
         this.result.currency = currencyValue;
       }
-      console.log(`Currency value: ${currencyValue}`);
+      Logger.info(`Currency value: ${currencyValue}`);
     } else {
-      console.log('Currency value not found');
+      Logger.warn('Currency value not found');
     }
   }
 
@@ -80,25 +83,16 @@ class ReportScraper {
   }
 
   async handleReportRow(row, rowIndex) {
-    // Extract all td elements from the row
-    const tds = await row.$$('td');
-    if (tds.length < 9) {
-      console.log(`Row ${rowIndex + 1}: Not enough columns, skipping.`);
+    /**
+     * Parses a single report row, clicks it if valid, and extracts deemedIncome.
+     * @param {ElementHandle} row - Puppeteer row element
+     * @param {number} rowIndex - Index of the row
+     */
+    const rowData = await ReportRowParser.parse(row);
+    if (!rowData) {
+      Logger.info(`Row ${rowIndex + 1}: Skipped (Not Jahresmeldung or missing columns)`);
       return;
     }
-    // Extract date from first td
-    const date = await tds[0].$eval('div', el => el.textContent.trim());
-    // Extract Ja/Nein from second td
-    const shouldParseRow = await tds[1].$eval('div', el => el.textContent.trim().toLowerCase());
-    if (shouldParseRow !== 'ja') {
-      console.log(`Row ${rowIndex + 1}: Skipped (Not Jahresmeldung)`);
-      return;
-    }
-    // Extract businessYearStart from eighth td
-    const businessYearStart = await tds[7].$eval('div', el => el.textContent.trim());
-    // Extract businessYearEnd from ninth td
-    const businessYearEnd = await tds[8].$eval('div', el => el.textContent.trim());
-    // Scroll, click, and extract deemedIncome as before
     await row.evaluate(el => el.scrollIntoView({ behavior: 'auto', block: 'center' }));
     await delay(200);
     await row.click();
@@ -108,19 +102,19 @@ class ReportScraper {
     const detailsTable = (await tablesAfterClick)[2];
     const value = await ReportValueExtractor.extract936937Value(detailsTable);
     const reportObj = {
-      date,
+      date: rowData.date,
       deemedIncome: value,
-      businessYearStart,
-      businessYearEnd,
+      businessYearStart: rowData.businessYearStart,
+      businessYearEnd: rowData.businessYearEnd,
     };
     if (value !== null) {
       if (!this.result) {
         this.result = new ReportResult(this.isin, null);
       }
       this.result.addReport(reportObj);
-      console.log(`Row ${rowIndex + 1}: Ausschüttungsgleiche Erträge = ${value}`);
+      Logger.info(`Row ${rowIndex + 1}: Ausschüttungsgleiche Erträge = ${value}`);
     } else {
-      console.log(`Row ${rowIndex + 1}: No Ausschüttungsgleiche Erträge 936/937 found`);
+      Logger.warn(`Row ${rowIndex + 1}: No Ausschüttungsgleiche Erträge 936/937 found`);
     }
   }
 

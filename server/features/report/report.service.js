@@ -5,10 +5,9 @@ export async function getReportData(isin) {
   try {
     await scraper.launchBrowser();
     await scraper.gotoPage();
-    await scraper.logCurrencyValue();
+    await scraper.parseCurrencyValue();
     await scraper.clickChevron();
     await scraper.parseReport();
-    console.log(scraper.result);
     return scraper.result;
   } finally {
     await scraper.close();
