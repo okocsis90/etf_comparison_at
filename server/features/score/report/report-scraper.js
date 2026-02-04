@@ -8,10 +8,15 @@ import Logger from '../../../shared/logger.js';
 
 /**
  * Orchestrates the scraping process for the report page.
- * Handles browser lifecycle, navigation, and delegates value extraction.
+ * Handles browser lifecycle and delegates navigation to ReportPage,
+ * value extraction to ReportValueExtractor, and row parsing to ReportRowParser.
  * @class ReportScraper
  */
 class ReportScraper {
+    static REPORT_TABLE_INDEX = 1;
+    static DETAILS_TABLE_INDEX = 2;
+    static MIN_TABLES_AFTER_CHEVRON = 3;
+
     constructor(isin) {
         this.isin = isin;
         this.browser = null;
@@ -19,12 +24,24 @@ class ReportScraper {
         this.result = null;
     }
 
+    // --- Browser Lifecycle ---
+
     async launchBrowser() {
-        this.browser = await puppeteer.launch({ headless: false, defaultViewport: null, args: ['--start-maximized'] });
+        this.browser = await puppeteer.launch({
+            headless: false,
+            defaultViewport: null,
+            args: ['--start-maximized'],
+        });
         const page = await this.browser.newPage();
         this.reportPage = new ReportPage(page, this.isin);
         await this.reportPage.setViewport();
     }
+
+    async close() {
+        if (this.browser) await this.browser.close();
+    }
+
+    // --- Navigation ---
 
     async gotoPage() {
         await this.reportPage.gotoPage();
@@ -33,92 +50,75 @@ class ReportScraper {
     }
 
     async clickChevron() {
-        const chevron = await this.reportPage.waitForChevron();
-        if (!chevron) throw new Error('Chevron icon not found');
-        await chevron.evaluate(el => el.scrollIntoView({ behavior: 'auto', block: 'center' }));
-        await delay(400);
-        try {
-            await chevron.click();
-        } catch {
-            await this.reportPage.page.evaluate(el => el.click(), chevron);
-        }
-        await delay(800);
+        await this.reportPage.clickChevron();
     }
 
-    /**
-     * Logs the currency value using the extraction logic from ReportValueExtractor.
-     */
+    // --- Parsing ---
+
     async parseCurrencyValue() {
         const currencyValue = await ReportValueExtractor.extractCurrencyValue(this.reportPage.page);
+        this.initResultIfNeeded(currencyValue);
         if (currencyValue) {
-            if (!this.result) {
-                this.result = new ReportResult(this.isin, currencyValue);
-            } else {
-                this.result.currency = currencyValue;
-            }
             Logger.info(`Currency value: ${currencyValue}`);
         } else {
             Logger.warn('Currency value not found');
         }
     }
 
-    async parseReport() {
-        const tables = await this.getTables();
-        if ((await tables).length < 2) throw new Error('Expected at least 2 tables for report parsing');
-        await this.parseReportRows((await tables)[1]);
+    initResultIfNeeded(currency = null) {
+        if (!this.result) {
+            this.result = new ReportResult(this.isin, currency);
+        } else if (currency) {
+            this.result.currency = currency;
+        }
     }
 
-    async getTables() {
+    async parseReport() {
         const tables = await this.reportPage.getTables();
-        if ((await tables).length < 3) throw new Error('Expected at least 3 tables after chevron click');
-        return tables;
+        this.validateTablesCount(tables);
+        await this.parseReportRows(tables[ReportScraper.REPORT_TABLE_INDEX]);
+    }
+
+    validateTablesCount(tables) {
+        if (tables.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) {
+            throw new Error(`Expected at least ${ReportScraper.MIN_TABLES_AFTER_CHEVRON} tables after chevron click`);
+        }
     }
 
     async parseReportRows(reportTable) {
         const rows = await this.reportPage.getTableRows(reportTable);
-        for (let i = 0; i < (await rows).length; i++) {
-            await this.handleReportRow((await rows)[i], i);
+        for (let i = 0; i < rows.length; i++) {
+            await this.handleReportRow(rows[i], i);
         }
     }
 
     async handleReportRow(row, rowIndex) {
-        /**
-         * Parses a single report row, clicks it if valid, and extracts deemedIncome.
-         * @param {ElementHandle} row - Puppeteer row element
-         * @param {number} rowIndex - Index of the row
-         */
         const rowData = await ReportRowParser.parse(row);
         if (!rowData) {
-            Logger.info(`Row ${rowIndex + 1}: Skipped (Not Jahresmeldung or missing columns)`);
+            Logger.info(`Row ${rowIndex + 1}: Skipped (Not a yearly report or missing columns)`);
             return;
         }
-        await row.evaluate(el => el.scrollIntoView({ behavior: 'auto', block: 'center' }));
-        await delay(200);
-        await row.click();
-        await delay(800);
-        const tablesAfterClick = await this.reportPage.getTables();
-        if ((await tablesAfterClick).length < 3) return;
-        const detailsTable = (await tablesAfterClick)[2];
-        const value = await ReportValueExtractor.extract936937Value(detailsTable);
-        const reportObj = {
-            date: rowData.date,
-            deemedIncome: value,
-            businessYearStart: rowData.businessYearStart,
-            businessYearEnd: rowData.businessYearEnd,
-        };
-        if (value !== null) {
-            if (!this.result) {
-                this.result = new ReportResult(this.isin, null);
-            }
-            this.result.addReport(reportObj);
-            Logger.info(`Row ${rowIndex + 1}: Ausschüttungsgleiche Erträge = ${value}`);
-        } else {
-            Logger.warn(`Row ${rowIndex + 1}: No Ausschüttungsgleiche Erträge 936/937 found`);
-        }
-    }
+        await this.reportPage.scrollAndClick(row);
+        await delay(600);
 
-    async close() {
-        if (this.browser) await this.browser.close();
+        const tablesAfterClick = await this.reportPage.getTables();
+        if (tablesAfterClick.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) return;
+
+        const detailsTable = tablesAfterClick[ReportScraper.DETAILS_TABLE_INDEX];
+        const deemedIncome = await ReportValueExtractor.extractDeemedIncomeValue(detailsTable);
+
+        if (deemedIncome !== null) {
+            this.initResultIfNeeded();
+            this.result.addReport({
+                date: rowData.date,
+                deemedIncome,
+                businessYearStart: rowData.businessYearStart,
+                businessYearEnd: rowData.businessYearEnd,
+            });
+            Logger.info(`Row ${rowIndex + 1}: Deemed income = ${deemedIncome}`);
+        } else {
+            Logger.warn(`Row ${rowIndex + 1}: No deemed income (936/937) found`);
+        }
     }
 }
 
