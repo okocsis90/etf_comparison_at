@@ -1,5 +1,3 @@
-// reportResult.js
-
 class ReportResult {
   constructor(isin, currency) {
     this.isin = isin;

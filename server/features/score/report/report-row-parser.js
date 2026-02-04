@@ -1,4 +1,5 @@
 /**
+ * Row parsing logic for report feature
  * Parses a report table row and extracts relevant fields.
  * Returns null if the row should be skipped (Ja/Nein not 'ja' or not enough columns).
  * @class ReportRowParser
