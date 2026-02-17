@@ -4,6 +4,7 @@ import EtfPriceService from './etf-price/etf-price.service.js';
 import ScoreCalculatorService from './score-calculator/score-calculator.service.js';
 import { ScoreInput, ReportEntry } from './score-calculator/score-input.js';
 import logger from '../../shared/logger.js';
+import { parseGermanDate } from '../../shared/utils.js';
 
 /**
  * Orchestrates the score calculation by:
@@ -36,10 +37,10 @@ class ScoreService {
 
     // Step 2: Get first and last business year dates
     const sortedReports = [...reportResult.reports].sort(
-      (a, b) => new Date(a.businessYearStart) - new Date(b.businessYearStart)
+      (a, b) => parseGermanDate(a.businessYearStart) - parseGermanDate(b.businessYearStart)
     );
-    const firstBusinessYearStart = new Date(sortedReports[0].businessYearStart);
-    const lastBusinessYearEnd = new Date(sortedReports[sortedReports.length - 1].businessYearEnd);
+    const firstBusinessYearStart = parseGermanDate(sortedReports[0].businessYearStart);
+    const lastBusinessYearEnd = parseGermanDate(sortedReports[sortedReports.length - 1].businessYearEnd);
 
     // Step 3: Build ScoreInput with all required data
     const scoreInput = await this._buildScoreInput({
@@ -126,7 +127,7 @@ class ScoreService {
     const entries = [];
 
     for (const report of reports) {
-      const reportDate = new Date(report.date);
+      const reportDate = parseGermanDate(report.date);
 
       // Fetch ETF price on the report date
       const priceData = await this.etfPriceService.getPrice(isin, reportDate);
@@ -150,8 +151,8 @@ class ScoreService {
         date: reportDate,
         deemedIncomeOriginal: report.deemedIncome,
         deemedIncomeEur,
-        businessYearStart: new Date(report.businessYearStart),
-        businessYearEnd: new Date(report.businessYearEnd),
+        businessYearStart: parseGermanDate(report.businessYearStart),
+        businessYearEnd: parseGermanDate(report.businessYearEnd),
         etfPriceOnDateEur
       }));
     }
