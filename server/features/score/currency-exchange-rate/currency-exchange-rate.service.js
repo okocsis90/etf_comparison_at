@@ -1,23 +1,39 @@
-// Currency exchange rate service (DB-friendly shape)
-// - This service returns an object that gives the exchange rate to convert FROM a given currency TO EUR.
-// - The returned field `exchangeRateCurrencyToEur` is defined as:
-//      EUR_amount = amount_in_currency * exchangeRateCurrencyToEur
-//   i.e. it is 'EUR per 1 unit of the currency' (EUR / CUR).
-// - Internally the service will prefer common ticker orientations (e.g. 'EURUSD=X') and
-//   will invert raw quotes when necessary so the returned `exchangeRateCurrencyToEur` always follows
-//   the formula above. Callers only need to multiply by `exchangeRateCurrencyToEur` to convert amounts.
-//
-// Quick numeric examples to avoid confusion:
-// 1) Yahoo gives raw ticker 'EURUSD=X' = 1.18 (this is USD per EUR):
-//    - Meaning: 1 EUR = 1.18 USD
-//    - If you have 100 USD and you want EUR using the raw ticker, you must divide:
-//        EUR = amount_in_USD / rawTickerValue  => 100 / 1.18 ≈ 84.75 EUR
-//    - Equivalent: invert the raw ticker => 1 / 1.18 ≈ 0.847 (EUR per USD). Then:
-//        EUR = amount_in_USD * 0.847
-// 2) The service normalizes for you and returns: { exchangeRateCurrencyToEur: 0.847 }
-//    - Then convert by multiplying directly:
-//        EUR = amount_in_USD * exchangeRateCurrencyToEur
-//    - So use the service's returned value as a multiplier (no manual inversion needed).
+/**
+ * Currency exchange rate service.
+ *
+ * This service returns an object that gives the exchange rate to convert FROM a given currency TO EUR.
+ *
+ * The returned field `exchangeRateCurrencyToEur` is defined as:
+ *
+ *   EUR_amount = amount_in_currency * exchangeRateCurrencyToEur
+ *
+ * i.e. it is "EUR per 1 unit of the currency" (EUR / CUR).
+ *
+ * Internally the service prefers common ticker orientations (for example: "EURUSD=X") and
+ * will invert raw quotes when necessary so the returned `exchangeRateCurrencyToEur` always follows
+ * the formula above. Callers only need to multiply by `exchangeRateCurrencyToEur` to convert amounts.
+ *
+ * Quick numeric examples to avoid confusion:
+ *
+ * 1) Yahoo returns raw ticker 'EURUSD=X' = 1.18 (USD per EUR)
+ *    - Meaning: 1 EUR = 1.18 USD
+ *    - If you have 100 USD and want EUR using the raw ticker, you must divide:
+ *        EUR = amount_in_USD / rawTickerValue  => 100 / 1.18 ≈ 84.75 EUR
+ *    - Equivalent: invert the raw ticker => 1 / 1.18 ≈ 0.847 (EUR per USD). Then:
+ *        EUR = amount_in_USD * 0.847
+ *
+ * 2) The service normalizes for you and returns: { exchangeRateCurrencyToEur: 0.847 }
+ *    - Then convert by multiplying directly:
+ *        EUR = amount_in_USD * exchangeRateCurrencyToEur
+ *    - So use the service's returned value as a multiplier (no manual inversion needed).
+ *
+ * @example
+ * const svc = new CurrencyExchangeRateService();
+ * const res = await svc.getExchangeRate('USD', '2023-01-01');
+ * // res.exchangeRateCurrencyToEur -> EUR per 1 USD (number)
+ *
+ * @module currency-exchange-rate.service
+ */
 
 import logger from '../../../shared/logger.js';
 import YahooFinance from 'yahoo-finance2';
@@ -63,96 +79,163 @@ class CurrencyExchangeRateService {
 
         // Prefer the more common EUR-first ticker (e.g. EURUSD=X). When using that, we must invert the raw quote
         const primaryTicker = `EUR${cur}=X`;
-        const primaryInvert = true; // because EUR{CUR}=X gives EUR->CUR, invert to get CUR->EUR
+        // because EUR{CUR}=X gives EUR->CUR, invert to get CUR->EUR
+        const primaryInvert = true;
 
         const secondaryTicker = `${cur}EUR=X`;
-        const secondaryInvert = false; // direct CUR->EUR
-
-        const buildResult = (priceData, raw, ticker, invert) => ({
-            requestDate: targetDate.toISOString(),
-            resultDate: priceData.toISOString(),
-            currency: cur,
-            // exchangeRateCurrencyToEur is always CUR -> EUR multiplier (e.g. USD -> EUR)
-            exchangeRateCurrencyToEur: invert ? (raw === 0 ? null : 1 / raw) : raw
-        });
-
-        const tryTicker = async (ticker, invert = false) => {
-            try {
-                const chart = await this.yahooFinance.chart(ticker, {
-                    period1: startDate,
-                    period2: endDate,
-                    interval: '1d'
-                });
-
-                if (chart && chart.quotes && chart.quotes.length > 0) {
-                    let priceData = null;
-                    for (let i = chart.quotes.length - 1; i >= 0; i--) {
-                        const q = chart.quotes[i];
-                        const qDate = new Date(q.date);
-                        if (qDate <= targetDate && q.close != null) {
-                            priceData = { close: q.close, date: qDate };
-                            break;
-                        }
-                    }
-                    if (!priceData) {
-                        const fallback = chart.quotes.find(q => q.close != null);
-                        if (fallback) priceData = { close: fallback.close, date: new Date(fallback.date) };
-                    }
-
-                    if (priceData && typeof priceData.close === 'number') {
-                        const raw = priceData.close;
-                        const value = invert ? (raw === 0 ? null : 1 / raw) : raw;
-                        if (value == null) return null;
-                        // Log the raw ticker orientation and the normalized CUR->EUR multiplier
-                        logger.info(`Found rate for ${ticker} on ${priceData.date.toISOString().split('T')[0]}: raw=${raw} (ticker orientation ${invert ? 'EUR->CUR' : 'CUR->EUR'}) => CUR->EUR=${value}`);
-                        return buildResult(priceData.date, raw, ticker, invert);
-                    }
-                }
-
-                // fallback to quote endpoint
-                const quote = await this.yahooFinance.quote(ticker);
-                if (quote && (quote.regularMarketPrice || quote.regularMarketPrice === 0)) {
-                    const raw = quote.regularMarketPrice;
-                    const value = invert ? (raw === 0 ? null : 1 / raw) : raw;
-                    if (value == null) return null;
-                    const qDate = quote.regularMarketTime ? new Date(quote.regularMarketTime) : targetDate;
-                    logger.info(`Found quote for ${ticker}: raw=${raw} (ticker orientation ${invert ? 'EUR->CUR' : 'CUR->EUR'}) => CUR->EUR=${value}`);
-                    return buildResult(qDate, raw, ticker, invert);
-                }
-
-                return null;
-            } catch (err) {
-                logger.debug(`Ticker ${ticker} not available or failed: ${err.message}`);
-                return null;
-            }
-        };
+        // direct CUR->EUR
+        const secondaryInvert = false;
 
         // Try primary (EUR{CUR}=X) first, then direct ({CUR}EUR=X)
-        const prim = await tryTicker(primaryTicker, primaryInvert);
-        if (prim != null) return prim;
+        const primaryResult = await this._tryTicker(primaryTicker, primaryInvert, startDate, endDate, targetDate, cur);
+        if (primaryResult != null) return primaryResult;
 
-        const sec = await tryTicker(secondaryTicker, secondaryInvert);
-        if (sec != null) return sec;
+        const secondaryResult = await this._tryTicker(secondaryTicker, secondaryInvert, startDate, endDate, targetDate, cur);
+        if (secondaryResult != null) return secondaryResult;
 
         // As a last resort, try searching for tickers containing the currency code
+        const searchResult = await this._trySearchFallback(cur, startDate, endDate, targetDate);
+        if (searchResult != null) return searchResult;
+
+        throw new Error(`Could not determine exchange rate for ${cur} -> EUR on ${targetDate.toISOString().split('T')[0]}`);
+    }
+
+    /**
+     * Try a single ticker, attempting chart data first then falling back to quote endpoint.
+     * @private
+     */
+    async _tryTicker(ticker, invert = false, startDate, endDate, targetDate, cur) {
         try {
-            const results = await this.yahooFinance.search(cur);
-            if (results && results.quotes && results.quotes.length > 0) {
-                for (const q of results.quotes) {
-                    const sym = q.symbol;
-                    if (!sym) continue;
-                    const val = await tryTicker(sym, false);
-                    if (val != null) return val;
-                    const valInv = await tryTicker(sym, true);
-                    if (valInv != null) return valInv;
-                }
-            }
+            const chartResult = await this._tryChartData(ticker, invert, startDate, endDate, targetDate, cur);
+            if (chartResult != null) return chartResult;
+
+            return await this._tryQuoteFallback(ticker, invert, targetDate, cur);
         } catch (err) {
-            logger.debug('Search fallback failed: ' + err.message);
+            logger.error(`Ticker ${ticker} not available or failed: ${err.message}`);
+            return null;
+        }
+    }
+
+    /**
+     * Try to get exchange rate from chart data.
+     * @private
+     */
+    async _tryChartData(ticker, invert, startDate, endDate, targetDate, cur) {
+        const chart = await this.yahooFinance.chart(ticker, {
+            period1: startDate,
+            period2: endDate,
+            interval: '1d'
+        });
+
+        if (!chart || !chart.quotes || chart.quotes.length === 0) return null;
+
+        const priceData = this._findBestPriceData(chart.quotes, targetDate);
+        if (!priceData || typeof priceData.close !== 'number') return null;
+
+        const raw = priceData.close;
+        const result = this._buildResult(priceData.date, raw, invert, cur, targetDate);
+
+        if (result.exchangeRateCurrencyToEur == null) return null;
+        logger.info(`Found rate for ${ticker} on ${priceData.date.toISOString().split('T')[0]}: raw=${raw} (ticker orientation ${invert ? 'EUR->CUR' : 'CUR->EUR'}) => CUR->EUR=${result.exchangeRateCurrencyToEur}`);
+        return result;
+    }
+
+    /**
+     * Find the best price data from chart quotes.
+     * Looks for the most recent quote before or on the target date.
+     * Falls back to any available quote if no match is found.
+     * @private
+     */
+    _findBestPriceData(quotes, targetDate) {
+        if (!quotes || quotes.length === 0) return null;
+
+        for (let i = quotes.length - 1; i >= 0; i--) {
+            const q = quotes[i];
+            const qDate = new Date(q.date);
+            if (qDate <= targetDate && q.close != null) {
+                return { close: q.close, date: qDate };
+            }
         }
 
-        // Optionally, we could try a USD cross here, but keep it explicit for now
-        throw new Error(`Could not determine exchange rate for ${cur} -> EUR on ${targetDate.toISOString().split('T')[0]}`);
+        const fallback = quotes.find(q => q.close != null);
+        if (fallback) {
+            return { close: fallback.close, date: new Date(fallback.date) };
+        }
+
+        return null;
+    }
+
+    _buildResult(resultDate, raw, invert, cur, requestDate) {
+        return {
+            requestDate: requestDate.toISOString(),
+            resultDate: resultDate.toISOString(),
+            currency: cur,
+            exchangeRateCurrencyToEur: this._calculateExchangeRate(raw, invert)
+        };
+    }
+
+    /**
+     * Calculate the exchange rate to EUR from the raw ticker value.
+     * @param {number} raw - The raw price from Yahoo Finance
+     * @param {boolean} invert - Whether to invert the rate (for EUR->CUR tickers)
+     * @returns {number|null} The exchange rate (CUR->EUR multiplier) or null if invalid
+     * @private
+     */
+    _calculateExchangeRate(raw, invert) {
+        if (invert) {
+            if (raw === 0) return null;
+            return 1 / raw;
+        }
+        return raw;
+    }
+
+    /**
+     * Try to get exchange rate using the quote endpoint as a fallback.
+     * @private
+     */
+    async _tryQuoteFallback(ticker, invert, targetDate, cur) {
+        const quote = await this.yahooFinance.quote(ticker);
+        if (!quote) return null;
+
+        const raw = quote.regularMarketPrice ?? quote.price ?? quote.bid ?? quote.ask;
+        if (raw == null || typeof raw !== 'number') return null;
+
+        const qDate = quote.regularMarketTime || quote.postMarketTime || targetDate;
+        const result = this._buildResult(qDate, raw, invert, cur, targetDate);
+
+        if (result.exchangeRateCurrencyToEur == null) return null;
+        logger.info(`Found quote for ${ticker}: raw=${raw} (ticker orientation ${invert ? 'EUR->CUR' : 'CUR->EUR'}) => CUR->EUR=${result.exchangeRateCurrencyToEur}`);
+        return result;
+    }
+
+    /**
+     * Try searching for tickers containing the currency code as a last resort.
+     * Tries both normal and inverted orientations for each found ticker.
+     * @private
+     */
+    async _trySearchFallback(cur, startDate, endDate, targetDate) {
+        try {
+            const results = await this.yahooFinance.search(cur);
+            if (!results || !results.quotes || results.quotes.length === 0) return null;
+
+            for (const q of results.quotes) {
+                const sym = q.symbol;
+                if (!sym) continue;
+
+                // Try normal orientation
+                const normalResult = await this._tryTicker(sym, false, startDate, endDate, targetDate, cur);
+                if (normalResult != null) return normalResult;
+
+                // Try inverted orientation
+                const invertedResult = await this._tryTicker(sym, true, startDate, endDate, targetDate, cur);
+                if (invertedResult != null) return invertedResult;
+            }
+
+            return null;
+        } catch (err) {
+            logger.error('Search fallback failed: ' + err.message);
+            return null;
+        }
     }
 }
 
