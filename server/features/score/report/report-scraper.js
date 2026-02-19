@@ -21,7 +21,6 @@ class ReportScraper {
         this.isin = isin;
         this.browser = null;
         this.reportPage = null;
-        this.result = null;
     }
 
     // --- Browser Lifecycle ---
@@ -41,85 +40,103 @@ class ReportScraper {
         if (this.browser) await this.browser.close();
     }
 
-    // --- Navigation ---
+    // --- Scraping Pipeline ---
 
-    async gotoPage() {
+    /**
+     * Executes the full scraping pipeline and returns the result.
+     * @returns {Promise<ReportResult>}
+     */
+    async scrape() {
+        await this._navigateToPage();
+        const currency = await this._extractCurrency();
+        await this.reportPage.clickChevron();
+        const reports = await this._extractReports();
+        return this._buildResult(currency, reports);
+    }
+
+    // --- Private: Navigation ---
+
+    async _navigateToPage() {
         await this.reportPage.gotoPage();
         await this.reportPage.scrollToTop();
         await delay(1000);
     }
 
-    async clickChevron() {
-        await this.reportPage.clickChevron();
-    }
+    // --- Private: Extraction ---
 
-    // --- Parsing ---
-
-    async parseCurrencyValue() {
-        const currencyValue = await ReportValueExtractor.extractCurrencyValue(this.reportPage.page);
-        this.initResultIfNeeded(currencyValue);
-        if (currencyValue) {
-            Logger.info(`Currency value: ${currencyValue}`);
+    async _extractCurrency() {
+        const currency = await ReportValueExtractor.extractCurrencyValue(this.reportPage.page);
+        if (currency) {
+            Logger.info(`Currency value: ${currency}`);
         } else {
             Logger.warn('Currency value not found');
         }
+        return currency;
     }
 
-    initResultIfNeeded(currency = null) {
-        if (!this.result) {
-            this.result = new ReportResult(this.isin, currency);
-        } else if (currency) {
-            this.result.currency = currency;
-        }
-    }
-
-    async parseReport() {
+    async _extractReports() {
         const tables = await this.reportPage.getTables();
-        this.validateTablesCount(tables);
-        await this.parseReportRows(tables[ReportScraper.REPORT_TABLE_INDEX]);
+        this._validateTablesCount(tables);
+        return this._parseReportRows(tables[ReportScraper.REPORT_TABLE_INDEX]);
     }
 
-    validateTablesCount(tables) {
+    _validateTablesCount(tables) {
         if (tables.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) {
             throw new Error(`Expected at least ${ReportScraper.MIN_TABLES_AFTER_CHEVRON} tables after chevron click`);
         }
     }
 
-    async parseReportRows(reportTable) {
+    async _parseReportRows(reportTable) {
         const rows = await this.reportPage.getTableRows(reportTable);
+        const reports = [];
         for (let i = 0; i < rows.length; i++) {
-            await this.handleReportRow(rows[i], i);
+            const report = await this._extractReportFromRow(rows[i], i);
+            if (report) reports.push(report);
         }
+        return reports;
     }
 
-    async handleReportRow(row, rowIndex) {
+    async _extractReportFromRow(row, rowIndex) {
         const rowData = await ReportRowParser.parse(row);
         if (!rowData) {
             Logger.info(`Row ${rowIndex + 1}: Skipped (Not a yearly report or missing columns)`);
-            return;
+            return null;
         }
+
         await this.reportPage.scrollAndClick(row);
         await delay(600);
 
         const tablesAfterClick = await this.reportPage.getTables();
-        if (tablesAfterClick.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) return;
+        if (tablesAfterClick.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) return null;
 
         const detailsTable = tablesAfterClick[ReportScraper.DETAILS_TABLE_INDEX];
         const deemedIncome = await ReportValueExtractor.extractDeemedIncomeValue(detailsTable);
 
         if (deemedIncome !== null) {
-            this.initResultIfNeeded();
-            this.result.addReport({
+            Logger.info(`Row ${rowIndex + 1}: Deemed income = ${deemedIncome}`);
+            return {
                 date: rowData.date,
                 deemedIncome,
                 businessYearStart: rowData.businessYearStart,
                 businessYearEnd: rowData.businessYearEnd,
-            });
-            Logger.info(`Row ${rowIndex + 1}: Deemed income = ${deemedIncome}`);
-        } else {
-            Logger.warn(`Row ${rowIndex + 1}: No deemed income (936/937) found`);
+            };
         }
+
+        Logger.warn(`Row ${rowIndex + 1}: No deemed income (936/937) found`);
+        return null;
+    }
+
+    // --- Private: Result Construction ---
+
+    _buildResult(currency, reports) {
+        const result = new ReportResult(this.isin, currency);
+        for (const report of reports) {
+            result.addReport(report);
+        }
+        return result;
     }
 }
 
 export default ReportScraper;
+
+

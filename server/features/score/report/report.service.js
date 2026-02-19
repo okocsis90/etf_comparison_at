@@ -1,15 +1,16 @@
 import ReportScraper from './report-scraper.js';
 
+/**
+ * Service responsible for fetching report data for a given ISIN.
+ * Manages the scraper lifecycle and returns a ReportResult.
+ * @class ReportService
+ */
 class ReportService {
   async getReportResult(isin) {
     const scraper = new ReportScraper(isin);
     try {
       await scraper.launchBrowser();
-      await scraper.gotoPage();
-      await scraper.parseCurrencyValue();
-      await scraper.clickChevron();
-      await scraper.parseReport();
-      return scraper.result;
+      return await scraper.scrape();
     } finally {
       await scraper.close();
     }
