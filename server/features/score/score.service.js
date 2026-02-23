@@ -33,7 +33,6 @@ class ScoreService {
     }
 
     const originalCurrency = reportResult.currency;
-    const needsCurrencyConversion = originalCurrency !== 'EUR';
 
     // Step 2: Get first and last business year dates
     const sortedReports = [...reportResult.reports].sort(
@@ -48,8 +47,7 @@ class ScoreService {
       originalCurrency,
       reports: reportResult.reports,
       firstBusinessYearStart,
-      lastBusinessYearEnd,
-      needsCurrencyConversion
+      lastBusinessYearEnd
     });
 
     // Step 4: Calculate and return score
@@ -67,8 +65,7 @@ class ScoreService {
     originalCurrency,
     reports,
     firstBusinessYearStart,
-    lastBusinessYearEnd,
-    needsCurrencyConversion
+    lastBusinessYearEnd
   }) {
     // Fetch ETF prices for boundary dates
     const [
@@ -85,13 +82,13 @@ class ScoreService {
     const etfPriceAtFirstBusinessYearStartEur = await this._convertToEur(
       priceAtFirstStart.price,
       priceAtFirstStart.currency,
-      firstBusinessYearStart
+      priceAtFirstStart.resultDate
     );
 
     const etfPriceAtLastBusinessYearEndEur = await this._convertToEur(
       priceAtLastEnd.price,
       priceAtLastEnd.currency,
-      lastBusinessYearEnd
+      priceAtLastEnd.resultDate
     );
 
     const currentEtfPriceEur = await this._convertToEur(
@@ -104,8 +101,7 @@ class ScoreService {
     const reportEntries = await this._buildReportEntries(
       isin,
       reports,
-      originalCurrency,
-      needsCurrencyConversion
+      originalCurrency
     );
 
     return new ScoreInput({
@@ -123,29 +119,24 @@ class ScoreService {
   /**
    * Builds ReportEntry objects for each report, fetching ETF prices and exchange rates.
    */
-  async _buildReportEntries(isin, reports, originalCurrency, needsCurrencyConversion) {
+  async _buildReportEntries(isin, reports, originalCurrency) {
     const entries = [];
 
     for (const report of reports) {
       const reportDate = parseGermanDate(report.date);
 
-      // Fetch ETF price on the report date
       const priceData = await this.etfPriceService.getPrice(isin, reportDate);
       const etfPriceOnDateEur = await this._convertToEur(
         priceData.price,
         priceData.currency,
-        reportDate
+        priceData.resultDate
       );
 
-      // Convert deemed income to EUR if needed
-      let deemedIncomeEur = report.deemedIncome;
-      if (needsCurrencyConversion) {
-        const exchangeRate = await this.currencyExchangeRateService.getExchangeRate(
-          originalCurrency,
-          reportDate
-        );
-        deemedIncomeEur = report.deemedIncome * exchangeRate.exchangeRateCurrencyToEur;
-      }
+      const deemedIncomeEur = await this._convertToEur(
+        report.deemedIncome,
+        originalCurrency,
+        reportDate
+      );
 
       entries.push(new ReportEntry({
         date: reportDate,
