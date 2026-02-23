@@ -64,9 +64,12 @@ class ScoreCalculatorService {
     // Maximum difference between any two deemed incomes
     const maxDeemedIncomeDiffEur = this._calculateMaxDiff(reports.map(r => r.deemedIncomeEur));
 
-    // Max diff as percentage of average deemed income
-    const maxDiffToAvgDeemedIncomePercent = avgDeemedIncomeEur !== 0
-      ? (maxDeemedIncomeDiffEur / avgDeemedIncomeEur) * 100
+    // Max diff as percentage of average ETF price on report dates
+    const avgEtfPriceEur = reportMetrics.length > 0
+      ? reportMetrics.reduce((sum, r) => sum + r.etfPriceOnDateEur, 0) / reportMetrics.length
+      : 0;
+    const maxDiffToAvgEtfPricePercent = avgEtfPriceEur !== 0
+      ? (maxDeemedIncomeDiffEur / avgEtfPriceEur) * 100
       : 0;
 
     // Average deemed income as percentage of current ETF price
@@ -84,7 +87,7 @@ class ScoreCalculatorService {
       avgEtfPriceToDeemedIncomePercent,
       avgDeemedIncomeEur,
       maxDeemedIncomeDiffEur,
-      maxDiffToAvgDeemedIncomePercent,
+      maxDiffToAvgEtfPricePercent,
       avgDeemedIncomeToCurrentEtfPricePercent,
       currentEtfPriceEur,
       etfPriceAtFirstBusinessYearStartEur,

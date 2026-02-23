@@ -356,35 +356,35 @@ describe('ScoreCalculatorService', () => {
         });
     });
 
-    // --- maxDiffToAvgDeemedIncomePercent ---
+    // --- maxDiffToAvgEtfPricePercent ---
 
-    describe('maxDiffToAvgDeemedIncomePercent', () => {
-        test('should be max diff as percent of average deemed income', () => {
-            // incomes: 1, 2, 3 → avg=2, diff=2 → 2/2*100=100%
+    describe('maxDiffToAvgEtfPricePercent', () => {
+        test('should be max deemed income diff as percent of average ETF price on report dates', () => {
+            // incomes: 1, 2, 3 → diff=2; etf prices: 100, 200, 300 → avg=200 → 2/200*100=1%
             const input = makeInput({
                 reports: [
-                    makeReport({ deemedIncomeEur: 1 }),
-                    makeReport({ deemedIncomeEur: 2 }),
-                    makeReport({ deemedIncomeEur: 3 }),
+                    makeReport({ deemedIncomeEur: 1, etfPriceOnDateEur: 100 }),
+                    makeReport({ deemedIncomeEur: 2, etfPriceOnDateEur: 200 }),
+                    makeReport({ deemedIncomeEur: 3, etfPriceOnDateEur: 300 }),
                 ],
             });
 
-            expect(service.calculateScore(input).maxDiffToAvgDeemedIncomePercent).toBeCloseTo(100);
+            expect(service.calculateScore(input).maxDiffToAvgEtfPricePercent).toBeCloseTo(1);
         });
 
-        test('should be zero when average deemed income is zero', () => {
+        test('should be zero when average ETF price is zero', () => {
             const input = makeInput({
                 reports: [
-                    makeReport({ deemedIncomeEur: 0 }),
-                    makeReport({ deemedIncomeEur: 0 }),
+                    makeReport({ deemedIncomeEur: 1, etfPriceOnDateEur: 0 }),
+                    makeReport({ deemedIncomeEur: 2, etfPriceOnDateEur: 0 }),
                 ],
             });
 
-            expect(service.calculateScore(input).maxDiffToAvgDeemedIncomePercent).toBe(0);
+            expect(service.calculateScore(input).maxDiffToAvgEtfPricePercent).toBe(0);
         });
 
         test('should be zero when there are no reports', () => {
-            expect(service.calculateScore(makeInput()).maxDiffToAvgDeemedIncomePercent).toBe(0);
+            expect(service.calculateScore(makeInput()).maxDiffToAvgEtfPricePercent).toBe(0);
         });
     });
 
@@ -462,7 +462,7 @@ describe('ScoreCalculatorService', () => {
             // maxDiff = 1.0 (between 2.0 and 1.0)
             // avgDeemedToPrice = (1.818+3.077+2.0)/3 ≈ 2.298%
             // deemedGainsToTotalGains = 4.5/30*100 = 15%
-            // maxDiffToAvgDeemed = 1.0/1.5*100 ≈ 66.67%
+            // avgEtfPrice = (55+65+75)/3 = 65 → maxDiffToAvgEtfPrice = 1.0/65*100 ≈ 1.538%
             // avgDeemedToCurrentPrice (current=90): 1.5/90*100 ≈ 1.667%
 
             const input = makeInput({
@@ -481,9 +481,11 @@ describe('ScoreCalculatorService', () => {
             expect(result.totalGains).toBeCloseTo(30);
             expect(result.deemedGains).toBeCloseTo(4.5);
             expect(result.deemedGainsToTotalGainsPercent).toBeCloseTo(15);
-            expect(result.avgDeemedIncomeEur).toBeCloseTo(1.5);
             expect(result.maxDeemedIncomeDiffEur).toBeCloseTo(1.0);
-            expect(result.maxDiffToAvgDeemedIncomePercent).toBeCloseTo(66.67);
+            // avg ETF price = (55+65+75)/3 = 65, max diff = 1.0 → 1/65*100 ≈ 1.538%
+            expect(result.maxDiffToAvgEtfPricePercent).toBeCloseTo(1.538, 2);
+            // avg ETF price = (55+65+75)/3 = 65, max diff = 1.0 → 1/65*100 ≈ 1.538%
+            expect(result.maxDiffToAvgEtfPricePercent).toBeCloseTo(1.538, 2);
             expect(result.avgEtfPriceToDeemedIncomePercent).toBeCloseTo(2.298, 2);
             expect(result.avgDeemedIncomeToCurrentEtfPricePercent).toBeCloseTo(1.667, 2);
             expect(result.totalReports).toBe(3);

@@ -22,7 +22,7 @@
  * @property {number} avgEtfPriceToDeemedIncomePercent - Average of deemed income to ETF price percentages
  * @property {number} avgDeemedIncomeEur - Average deemed income in EUR
  * @property {number} maxDeemedIncomeDiffEur - Maximum difference between any two deemed incomes
- * @property {number} maxDiffToAvgDeemedIncomePercent - Max diff as percentage of average deemed income
+ * @property {number} maxDiffToAvgEtfPricePercent - Max deemed income diff as percentage of average ETF price on report dates
  * @property {number} avgDeemedIncomeToCurrentEtfPricePercent - Avg deemed income as percentage of current ETF price
  * @property {number} currentEtfPriceEur - Current ETF price in EUR
  * @property {number} etfPriceAtFirstBusinessYearStartEur - ETF price at first business year start
@@ -57,7 +57,7 @@ class ScoreResult {
     avgEtfPriceToDeemedIncomePercent,
     avgDeemedIncomeEur,
     maxDeemedIncomeDiffEur,
-    maxDiffToAvgDeemedIncomePercent,
+    maxDiffToAvgEtfPricePercent,
     avgDeemedIncomeToCurrentEtfPricePercent,
     currentEtfPriceEur,
     etfPriceAtFirstBusinessYearStartEur,
@@ -75,7 +75,7 @@ class ScoreResult {
     this.avgEtfPriceToDeemedIncomePercent = avgEtfPriceToDeemedIncomePercent;
     this.avgDeemedIncomeEur = avgDeemedIncomeEur;
     this.maxDeemedIncomeDiffEur = maxDeemedIncomeDiffEur;
-    this.maxDiffToAvgDeemedIncomePercent = maxDiffToAvgDeemedIncomePercent;
+    this.maxDiffToAvgEtfPricePercent = maxDiffToAvgEtfPricePercent;
     this.avgDeemedIncomeToCurrentEtfPricePercent = avgDeemedIncomeToCurrentEtfPricePercent;
     this.currentEtfPriceEur = currentEtfPriceEur;
     this.etfPriceAtFirstBusinessYearStartEur = etfPriceAtFirstBusinessYearStartEur;
