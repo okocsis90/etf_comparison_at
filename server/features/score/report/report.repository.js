@@ -120,13 +120,29 @@ class ReportRepository {
 }
 
 /**
+ * Parses a German-formatted date string "DD.MM.YYYY" into a Date object.
+ * Falls back to native Date parsing for ISO strings already stored in the DB.
+ * @param {string} dateStr
+ * @returns {Date}
+ */
+function _parseDate(dateStr) {
+    if (!dateStr) return new Date(0);
+    const parts = dateStr.split('.');
+    if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    }
+    return new Date(dateStr);
+}
+
+/**
  * Finds the latest report date and adds REFETCH_AFTER_DAYS to it.
- * @param {Array<{date: string}>} reports - raw report objects (German date strings)
+ * @param {Array<{date: string}>} reports - raw report objects (German date strings DD.MM.YYYY)
  * @returns {Date}
  */
 function _calculateNextFetchDate(reports) {
     const latestDate = reports.reduce((latest, report) => {
-        const reportDate = new Date(report.date);
+        const reportDate = _parseDate(report.date);
         return reportDate > latest ? reportDate : latest;
     }, new Date(0));
 
