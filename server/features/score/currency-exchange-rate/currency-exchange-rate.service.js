@@ -37,10 +37,12 @@
 
 import logger from '../../../shared/logger.js';
 import YahooFinance from 'yahoo-finance2';
+import ExchangeRateRepository from './exchange-rate.repository.js';
 
 class CurrencyExchangeRateService {
     constructor() {
         this.yahooFinance = new YahooFinance();
+        this.repository = new ExchangeRateRepository();
     }
 
     /**
@@ -69,6 +71,16 @@ class CurrencyExchangeRateService {
             };
         }
 
+        const cached = this.repository.find(cur, targetDate);
+        if (cached) {
+            return {
+                requestDate: cached.requestDate,
+                resultDate: cached.resultDate,
+                currency: cached.currency,
+                exchangeRateCurrencyToEur: cached.exchangeRateCurrencyToEur
+            };
+        }
+
         logger.info(`Fetching exchange rate for ${cur} -> EUR on ${targetDate.toISOString().split('T')[0]}`);
 
         const startDate = new Date(targetDate);
@@ -88,16 +100,30 @@ class CurrencyExchangeRateService {
 
         // Try primary (EUR{CUR}=X) first, then direct ({CUR}EUR=X)
         const primaryResult = await this._tryTicker(primaryTicker, primaryInvert, startDate, endDate, targetDate, cur);
-        if (primaryResult != null) return primaryResult;
+        if (primaryResult != null) return this._saveAndReturn(primaryResult, targetDate);
 
         const secondaryResult = await this._tryTicker(secondaryTicker, secondaryInvert, startDate, endDate, targetDate, cur);
-        if (secondaryResult != null) return secondaryResult;
+        if (secondaryResult != null) return this._saveAndReturn(secondaryResult, targetDate);
 
         // As a last resort, try searching for tickers containing the currency code
         const searchResult = await this._trySearchFallback(cur, startDate, endDate, targetDate);
-        if (searchResult != null) return searchResult;
+        if (searchResult != null) return this._saveAndReturn(searchResult, targetDate);
 
         throw new Error(`Could not determine exchange rate for ${cur} -> EUR on ${targetDate.toISOString().split('T')[0]}`);
+    }
+
+    /**
+     * Saves a fetched result to the repository and returns it.
+     * @private
+     */
+    _saveAndReturn(result, requestDate) {
+        this.repository.save(
+            result.currency,
+            requestDate,
+            new Date(result.resultDate),
+            result.exchangeRateCurrencyToEur
+        );
+        return result;
     }
 
     /**

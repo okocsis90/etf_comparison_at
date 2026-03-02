@@ -24,6 +24,16 @@ jest.unstable_mockModule('yahoo-finance2', () => ({
     default: jest.fn(() => mockYahooFinance)
 }));
 
+// Mock the repository so tests never touch the real DB
+const mockExchangeRateRepository = {
+    find: jest.fn().mockReturnValue(null),
+    save: jest.fn()
+};
+
+jest.unstable_mockModule('./exchange-rate.repository.js', () => ({
+    default: jest.fn(() => mockExchangeRateRepository)
+}));
+
 // Now import the service after mocks are set up
 const { default: CurrencyExchangeRateService } = await import('./currency-exchange-rate.service.js');
 

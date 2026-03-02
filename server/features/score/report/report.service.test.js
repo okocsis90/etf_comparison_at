@@ -21,6 +21,15 @@ jest.unstable_mockModule('./report-scraper.js', () => ({
     default: jest.fn(() => mockScraper),
 }));
 
+const mockRepository = {
+    findFresh: jest.fn(),
+    save: jest.fn(),
+};
+
+jest.unstable_mockModule('./report.repository.js', () => ({
+    default: jest.fn(() => mockRepository),
+}));
+
 const { default: ReportService } = await import('./report.service.js');
 const { default: ReportScraper } = await import('./report-scraper.js');
 
@@ -28,15 +37,17 @@ describe('ReportService', () => {
     let service;
 
     beforeEach(() => {
-        service = new ReportService();
         jest.clearAllMocks();
+        service = new ReportService();
         mockScraper.launchBrowser.mockResolvedValue(undefined);
         mockScraper.scrape.mockResolvedValue({ isin: '', currency: null, reports: [] });
         mockScraper.close.mockResolvedValue(undefined);
+        mockRepository.findFresh.mockReturnValue(null);
+        mockRepository.save.mockReturnValue(undefined);
     });
 
-    describe('getReportResult', () => {
-        test('should create scraper, launch browser, scrape, and close', async () => {
+    describe('getReportResult - cache miss (scrapes OeKB)', () => {
+        test('should create scraper, launch browser, scrape, close and save result', async () => {
             const expectedResult = {
                 isin: 'IE00BK5BQX27',
                 currency: 'EUR',
@@ -50,6 +61,7 @@ describe('ReportService', () => {
             expect(mockScraper.launchBrowser).toHaveBeenCalled();
             expect(mockScraper.scrape).toHaveBeenCalled();
             expect(mockScraper.close).toHaveBeenCalled();
+            expect(mockRepository.save).toHaveBeenCalledWith(expectedResult);
             expect(result).toEqual(expectedResult);
         });
 
@@ -75,6 +87,32 @@ describe('ReportService', () => {
             await service.getReportResult('LU0392494562');
 
             expect(ReportScraper).toHaveBeenCalledWith('LU0392494562');
+        });
+    });
+
+    describe('getReportResult - cache hit (returns cached data)', () => {
+        test('should return cached result without scraping', async () => {
+            const cachedResult = {
+                isin: 'IE00BK5BQX27',
+                currency: 'EUR',
+                reports: [{ date: '15.01.2024', deemedIncome: 1.4767 }],
+            };
+            mockRepository.findFresh.mockReturnValue(cachedResult);
+
+            const result = await service.getReportResult('IE00BK5BQX27');
+
+            expect(result).toEqual(cachedResult);
+            expect(mockScraper.launchBrowser).not.toHaveBeenCalled();
+            expect(mockScraper.scrape).not.toHaveBeenCalled();
+            expect(mockRepository.save).not.toHaveBeenCalled();
+        });
+
+        test('should check cache with the correct ISIN', async () => {
+            mockRepository.findFresh.mockReturnValue({ isin: 'LU0392494562', currency: 'USD', reports: [] });
+
+            await service.getReportResult('LU0392494562');
+
+            expect(mockRepository.findFresh).toHaveBeenCalledWith('LU0392494562');
         });
     });
 });

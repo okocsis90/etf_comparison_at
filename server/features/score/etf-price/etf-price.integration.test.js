@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
-import EtfPriceService from './etf-price.service.js';
+import { jest, describe, it, expect, beforeAll } from '@jest/globals';
+
+// Use a no-op repository so integration tests never touch the file-system DB
+const mockEtfPriceRepository = {
+    find: jest.fn().mockReturnValue(null),
+    save: jest.fn()
+};
+
+jest.unstable_mockModule('./etf-price.repository.js', () => ({
+    default: jest.fn(() => mockEtfPriceRepository)
+}));
+
+const { default: EtfPriceService } = await import('./etf-price.service.js');
 
 /**
  * Integration tests for EtfPriceService

@@ -1,7 +1,17 @@
-import { describe, test, expect } from '@jest/globals';
+import { jest, describe, test, expect, beforeAll } from '@jest/globals';
 
-// Import the actual service (no mocking!)
-import CurrencyExchangeRateService from './currency-exchange-rate.service.js';
+// Use a no-op repository so integration tests never touch the file-system DB
+const mockExchangeRateRepository = {
+    find: jest.fn().mockReturnValue(null),
+    save: jest.fn()
+};
+
+jest.unstable_mockModule('./exchange-rate.repository.js', () => ({
+    default: jest.fn(() => mockExchangeRateRepository)
+}));
+
+// Import the actual service after the mock is registered
+const { default: CurrencyExchangeRateService } = await import('./currency-exchange-rate.service.js');
 
 /**
  * INTEGRATION TESTS - Real API Calls

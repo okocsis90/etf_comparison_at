@@ -1,13 +1,15 @@
 import logger from '../../../shared/logger.js';
 import YahooFinance from "yahoo-finance2";
+import EtfPriceRepository from './etf-price.repository.js';
 
 /**
  * Handles ETF price fetching for a given ISIN and date.
- * Uses Yahoo Finance API to get historical prices.
+ * Returns cached prices for historical dates; always fetches live for current prices.
  */
 class EtfPriceService {
     constructor() {
         this.yahooFinance = new YahooFinance();
+        this.repository = new EtfPriceRepository();
     }
 
     /**
@@ -18,6 +20,19 @@ class EtfPriceService {
      */
     async getPrice(isin, date) {
         const targetDate = new Date(date);
+
+        const cached = this.repository.find(isin, targetDate);
+        if (cached) {
+            return {
+                isin,
+                ticker: cached.ticker,
+                currency: cached.currency,
+                requestDate: targetDate,
+                resultDate: new Date(cached.resultDate),
+                price: cached.price
+            };
+        }
+
         const ticker = await this._searchTickerByIsin(isin);
 
         if (!ticker) {
@@ -35,9 +50,11 @@ class EtfPriceService {
 
             const result = await this._fetchChartPrice(ticker, targetDate, startDate, endDate);
 
+            this.repository.save(isin, targetDate, result.date, result.price, result.currency, ticker);
+
             return {
-                isin: isin,
-                ticker: ticker,
+                isin,
+                ticker,
                 currency: result.currency,
                 requestDate: targetDate,
                 resultDate: result.date,

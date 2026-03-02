@@ -9,6 +9,7 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "express": "^4.20.0",
     "node-cache": "^5.1.2",
     "puppeteer": "^24.36.1",
