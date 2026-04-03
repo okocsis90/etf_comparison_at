@@ -128,16 +128,21 @@ class CurrencyExchangeRateService {
 
     /**
      * Try a single ticker, attempting chart data first then falling back to quote endpoint.
+     * Each strategy has its own error handling so a chart failure does not skip the quote attempt.
      * @private
      */
     async _tryTicker(ticker, invert = false, startDate, endDate, targetDate, cur) {
         try {
             const chartResult = await this._tryChartData(ticker, invert, startDate, endDate, targetDate, cur);
             if (chartResult != null) return chartResult;
+        } catch (err) {
+            logger.warn(`Chart lookup failed for ${ticker}: ${err.message}`);
+        }
 
+        try {
             return await this._tryQuoteFallback(ticker, invert, targetDate, cur);
         } catch (err) {
-            logger.error(`Ticker ${ticker} not available or failed: ${err.message}`);
+            logger.warn(`Quote fallback also failed for ${ticker}: ${err.message}`);
             return null;
         }
     }
@@ -191,6 +196,16 @@ class CurrencyExchangeRateService {
         return null;
     }
 
+    /**
+     * Construct the standard result shape.
+     * @param {Date} resultDate - The date the rate actually corresponds to
+     * @param {number} raw - The raw price from Yahoo Finance
+     * @param {boolean} invert - Whether to invert the rate
+     * @param {string} cur - Three-letter currency code
+     * @param {Date} requestDate - The originally requested date
+     * @returns {{requestDate:string, resultDate:string, currency:string, exchangeRateCurrencyToEur:number|null}}
+     * @private
+     */
     _buildResult(resultDate, raw, invert, cur, requestDate) {
         return {
             requestDate: requestDate.toISOString(),
@@ -208,8 +223,8 @@ class CurrencyExchangeRateService {
      * @private
      */
     _calculateExchangeRate(raw, invert) {
+        if (!Number.isFinite(raw) || raw <= 0) return null;
         if (invert) {
-            if (raw === 0) return null;
             return 1 / raw;
         }
         return raw;
@@ -226,7 +241,7 @@ class CurrencyExchangeRateService {
         const raw = quote.regularMarketPrice ?? quote.price ?? quote.bid ?? quote.ask;
         if (raw == null || typeof raw !== 'number') return null;
 
-        const qDate = quote.regularMarketTime || quote.postMarketTime || targetDate;
+        const qDate = quote.regularMarketTime ?? quote.postMarketTime ?? targetDate;
         const result = this._buildResult(qDate, raw, invert, cur, targetDate);
 
         if (result.exchangeRateCurrencyToEur == null) return null;
@@ -236,7 +251,7 @@ class CurrencyExchangeRateService {
 
     /**
      * Try searching for tickers containing the currency code as a last resort.
-     * Tries both normal and inverted orientations for each found ticker.
+     * Infers the correct inversion from the ticker symbol when possible.
      * @private
      */
     async _trySearchFallback(cur, startDate, endDate, targetDate) {
@@ -248,13 +263,19 @@ class CurrencyExchangeRateService {
                 const sym = q.symbol;
                 if (!sym) continue;
 
-                // Try normal orientation
-                const normalResult = await this._tryTicker(sym, false, startDate, endDate, targetDate, cur);
-                if (normalResult != null) return normalResult;
+                const invert = this._inferInversion(sym, cur);
+                if (invert !== null) {
+                    const result = await this._tryTicker(sym, invert, startDate, endDate, targetDate, cur);
+                    if (result != null) return result;
+                } else {
+                    // Unknown orientation — try normal first, then inverted
+                    logger.warn(`Cannot infer orientation for search result ${sym}, trying both`);
+                    const normalResult = await this._tryTicker(sym, false, startDate, endDate, targetDate, cur);
+                    if (normalResult != null) return normalResult;
 
-                // Try inverted orientation
-                const invertedResult = await this._tryTicker(sym, true, startDate, endDate, targetDate, cur);
-                if (invertedResult != null) return invertedResult;
+                    const invertedResult = await this._tryTicker(sym, true, startDate, endDate, targetDate, cur);
+                    if (invertedResult != null) return invertedResult;
+                }
             }
 
             return null;
@@ -262,6 +283,24 @@ class CurrencyExchangeRateService {
             logger.error('Search fallback failed: ' + err.message);
             return null;
         }
+    }
+
+    /**
+     * Infer whether a ticker symbol needs inversion to get CUR→EUR.
+     * @param {string} symbol - Ticker symbol, e.g. "EURUSD=X"
+     * @param {string} cur - Three-letter currency code, e.g. "USD"
+     * @returns {boolean|null} true = invert (EUR→CUR ticker), false = direct (CUR→EUR), null = ambiguous
+     * @private
+     */
+    _inferInversion(symbol, cur) {
+        const base = symbol.toUpperCase().replace('=X', '');
+        if (base.startsWith('EUR') && base.includes(cur)) {
+            return true;   // EUR{CUR} → gives EUR→CUR, must invert
+        }
+        if (base.startsWith(cur) && base.includes('EUR')) {
+            return false;  // {CUR}EUR → gives CUR→EUR directly
+        }
+        return null;
     }
 }
 

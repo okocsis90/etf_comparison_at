@@ -94,8 +94,14 @@ describe('CurrencyExchangeRateService', () => {
         });
 
         test('should fall back to secondary ticker if primary fails', async () => {
+            // Primary chart fails
             mockYahooFinance.chart
-                .mockRejectedValueOnce(new Error('Ticker not found'))
+                .mockRejectedValueOnce(new Error('Ticker not found'));
+            // Primary quote also fails
+            mockYahooFinance.quote
+                .mockResolvedValueOnce(null);
+            // Secondary chart succeeds
+            mockYahooFinance.chart
                 .mockResolvedValueOnce({
                     quotes: [
                         { date: new Date('2024-01-15'), close: 0.92 }
@@ -113,7 +119,9 @@ describe('CurrencyExchangeRateService', () => {
         });
 
         test('should use quote endpoint as fallback when chart has no data', async () => {
+            // Primary ticker chart returns empty
             mockYahooFinance.chart.mockResolvedValueOnce({ quotes: [] });
+            // Primary ticker quote succeeds
             mockYahooFinance.quote.mockResolvedValueOnce({
                 regularMarketPrice: 1.08,
                 regularMarketTime: new Date('2024-01-15')
@@ -233,8 +241,23 @@ describe('CurrencyExchangeRateService', () => {
             expect(service._calculateExchangeRate(0, true)).toBeNull();
         });
 
-        test('should return zero when not inverting zero', () => {
-            expect(service._calculateExchangeRate(0, false)).toBe(0);
+        test('should return null when not inverting zero', () => {
+            expect(service._calculateExchangeRate(0, false)).toBeNull();
+        });
+
+        test('should return null for NaN', () => {
+            expect(service._calculateExchangeRate(NaN, false)).toBeNull();
+            expect(service._calculateExchangeRate(NaN, true)).toBeNull();
+        });
+
+        test('should return null for negative values', () => {
+            expect(service._calculateExchangeRate(-1.5, false)).toBeNull();
+            expect(service._calculateExchangeRate(-1.5, true)).toBeNull();
+        });
+
+        test('should return null for Infinity', () => {
+            expect(service._calculateExchangeRate(Infinity, false)).toBeNull();
+            expect(service._calculateExchangeRate(Infinity, true)).toBeNull();
         });
     });
 
@@ -362,13 +385,40 @@ describe('CurrencyExchangeRateService', () => {
     });
 
     describe('_trySearchFallback', () => {
-        test('should search and try found tickers', async () => {
+        test('should search and try found tickers with inferred orientation', async () => {
+            mockYahooFinance.search.mockResolvedValueOnce({
+                quotes: [
+                    { symbol: 'EURGBP=X' }
+                ]
+            });
+
+            // Inferred as EUR→GBP, so inverted. Chart call succeeds.
+            mockYahooFinance.chart.mockResolvedValueOnce({
+                quotes: [
+                    { date: new Date('2024-01-15'), close: 0.86 }
+                ]
+            });
+
+            const result = await service._trySearchFallback(
+                'GBP',
+                new Date('2024-01-10'),
+                new Date('2024-01-16'),
+                testDate
+            );
+
+            expect(result).not.toBeNull();
+            // EURGBP=X = 0.86 means 1 EUR = 0.86 GBP → 1 GBP = 1/0.86 EUR
+            expect(result.exchangeRateCurrencyToEur).toBeCloseTo(1 / 0.86, 3);
+        });
+
+        test('should try both orientations for ambiguous ticker symbols', async () => {
             mockYahooFinance.search.mockResolvedValueOnce({
                 quotes: [
                     { symbol: 'GBP=X' }
                 ]
             });
 
+            // Normal orientation (invert=false) chart returns data
             mockYahooFinance.chart.mockResolvedValueOnce({
                 quotes: [
                     { date: new Date('2024-01-15'), close: 0.86 }
@@ -384,19 +434,21 @@ describe('CurrencyExchangeRateService', () => {
 
             expect(result).not.toBeNull();
             expect(result.exchangeRateCurrencyToEur).toBe(0.86);
+            expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Cannot infer orientation'));
         });
 
-        test('should try inverted orientation if normal fails', async () => {
+        test('should try inverted orientation if normal fails for ambiguous ticker', async () => {
             mockYahooFinance.search.mockResolvedValueOnce({
                 quotes: [
-                    { symbol: 'EURGBP=X' }
+                    { symbol: 'GBP=X' }
                 ]
             });
 
-            // First try (normal) fails
+            // Normal (invert=false) chart fails, quote fails
             mockYahooFinance.chart.mockResolvedValueOnce(null);
+            mockYahooFinance.quote.mockResolvedValueOnce(null);
 
-            // Second try (inverted) succeeds
+            // Inverted (invert=true) chart succeeds
             mockYahooFinance.chart.mockResolvedValueOnce({
                 quotes: [
                     { date: new Date('2024-01-15'), close: 1.16 }
@@ -411,7 +463,8 @@ describe('CurrencyExchangeRateService', () => {
             );
 
             expect(result).not.toBeNull();
-            expect(mockYahooFinance.chart).toHaveBeenCalledTimes(2);
+            // Inverted: 1 / 1.16
+            expect(result.exchangeRateCurrencyToEur).toBeCloseTo(1 / 1.16, 3);
         });
 
         test('should return null if search returns no results', async () => {
@@ -439,6 +492,30 @@ describe('CurrencyExchangeRateService', () => {
 
             expect(result).toBeNull();
             expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Search fallback failed'));
+        });
+    });
+
+    describe('_inferInversion', () => {
+        test('should detect EUR-first ticker as needing inversion', () => {
+            expect(service._inferInversion('EURUSD=X', 'USD')).toBe(true);
+            expect(service._inferInversion('EURGBP=X', 'GBP')).toBe(true);
+            expect(service._inferInversion('EURJPY=X', 'JPY')).toBe(true);
+        });
+
+        test('should detect CUR-first ticker as direct (no inversion)', () => {
+            expect(service._inferInversion('USDEUR=X', 'USD')).toBe(false);
+            expect(service._inferInversion('GBPEUR=X', 'GBP')).toBe(false);
+        });
+
+        test('should return null for ambiguous symbols', () => {
+            expect(service._inferInversion('USD=X', 'USD')).toBeNull();
+            expect(service._inferInversion('GBP=X', 'GBP')).toBeNull();
+            expect(service._inferInversion('USDJPY=X', 'USD')).toBeNull();
+        });
+
+        test('should be case-insensitive', () => {
+            expect(service._inferInversion('eurusd=x', 'USD')).toBe(true);
+            expect(service._inferInversion('usdeur=x', 'USD')).toBe(false);
         });
     });
 
