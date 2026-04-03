@@ -122,29 +122,46 @@ class ReportRepository {
 /**
  * Parses a German-formatted date string "DD.MM.YYYY" into a Date object.
  * Falls back to native Date parsing for ISO strings already stored in the DB.
+ * Returns null if the date string cannot be parsed into a valid Date.
  * @param {string} dateStr
- * @returns {Date}
+ * @returns {Date|null}
  */
 function _parseDate(dateStr) {
-    if (!dateStr) return new Date(0);
+    if (!dateStr) return null;
+    let date;
     const parts = dateStr.split('.');
     if (parts.length === 3) {
         const [day, month, year] = parts;
-        return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+        date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    } else {
+        date = new Date(dateStr);
     }
-    return new Date(dateStr);
+    if (isNaN(date.getTime())) {
+        logger.warn(`Unable to parse date string: "${dateStr}"`);
+        return null;
+    }
+    return date;
 }
 
 /**
  * Finds the latest report date and adds REFETCH_AFTER_DAYS to it.
+ * Falls back to the current date if no report dates could be parsed.
  * @param {Array<{date: string}>} reports - raw report objects (German date strings DD.MM.YYYY)
  * @returns {Date}
  */
 function _calculateNextFetchDate(reports) {
-    const latestDate = reports.reduce((latest, report) => {
+    let latestDate = null;
+    for (const report of reports) {
         const reportDate = _parseDate(report.date);
-        return reportDate > latest ? reportDate : latest;
-    }, new Date(0));
+        if (reportDate && (!latestDate || reportDate > latestDate)) {
+            latestDate = reportDate;
+        }
+    }
+
+    if (!latestDate) {
+        logger.warn('No valid report dates found, falling back to current date for next fetch calculation');
+        latestDate = new Date();
+    }
 
     const nextFetch = new Date(latestDate);
     nextFetch.setDate(nextFetch.getDate() + ReportRepository.REFETCH_AFTER_DAYS);
