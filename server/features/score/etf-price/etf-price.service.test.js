@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+﻿import { jest } from '@jest/globals';
 import { describe, expect, beforeEach, it } from '@jest/globals';
 
 // Mock the logger before importing the service
@@ -76,6 +76,16 @@ describe('EtfPriceService', () => {
 
             expect(mockYahooFinance.search).toHaveBeenCalledWith(isin);
             expect(mockYahooFinance.chart).toHaveBeenCalled();
+        });
+
+        it('should throw if isin is missing', async () => {
+            await expect(service.getPrice('', new Date('2024-01-15')))
+                .rejects.toThrow('isin is required');
+        });
+
+        it('should throw if date is invalid', async () => {
+            await expect(service.getPrice('IE00BK5BQX27', 'not-a-date'))
+                .rejects.toThrow('Invalid date provided');
         });
 
         it('should prefer European exchange tickers', async () => {
@@ -199,7 +209,7 @@ describe('EtfPriceService', () => {
 
             const result = await service.getPrice(isin, date);
 
-            expect(result.currency).toBeUndefined();
+            expect(result.currency).toBeNull();
             expect(result.price).toBe(105.50);
         });
     });
@@ -233,6 +243,11 @@ describe('EtfPriceService', () => {
 
             expect(mockYahooFinance.search).toHaveBeenCalledWith(isin);
             expect(mockYahooFinance.quote).toHaveBeenCalledWith(ticker);
+        });
+
+        it('should throw if isin is missing', async () => {
+            await expect(service.getCurrentPrice(''))
+                .rejects.toThrow('isin is required');
         });
 
         it('should handle missing ticker symbol', async () => {
@@ -316,7 +331,7 @@ describe('EtfPriceService', () => {
 
             const result = await service.getCurrentPrice(isin);
 
-            expect(result.currency).toBeUndefined();
+            expect(result.currency).toBeNull();
             expect(result.price).toBe(107.25);
         });
     });
@@ -389,6 +404,47 @@ describe('EtfPriceService', () => {
             const ticker = await service._searchTickerByIsin(isin);
 
             expect(ticker).toBeNull();
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                expect.stringContaining(`Failed to search ticker for ISIN ${isin}: Network error`)
+            );
+        });
+
+        it('should cache the resolved ticker and not call search again', async () => {
+            const isin = 'IE00BK5BQX27';
+
+            mockYahooFinance.search.mockResolvedValue({
+                quotes: [{ symbol: 'VWCE.DE' }]
+            });
+
+            const first = await service._searchTickerByIsin(isin);
+            const second = await service._searchTickerByIsin(isin);
+
+            expect(first).toBe('VWCE.DE');
+            expect(second).toBe('VWCE.DE');
+            expect(mockYahooFinance.search).toHaveBeenCalledTimes(1);
+        });
+
+        it('should cache ticker across getPrice and getCurrentPrice calls', async () => {
+            const isin = 'IE00BK5BQX27';
+
+            mockYahooFinance.search.mockResolvedValue({
+                quotes: [{ symbol: 'VWCE.DE' }]
+            });
+            mockYahooFinance.chart.mockResolvedValue({
+                meta: { currency: 'EUR' },
+                quotes: [{ date: new Date('2024-01-15'), close: 105.50 }]
+            });
+            mockYahooFinance.quote.mockResolvedValue({
+                regularMarketPrice: 107.25,
+                currency: 'EUR',
+                regularMarketTime: new Date()
+            });
+
+            await service.getPrice(isin, new Date('2024-01-15'));
+            await service.getCurrentPrice(isin);
+
+            // search should only have been called once despite two price fetches
+            expect(mockYahooFinance.search).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -433,13 +489,50 @@ describe('EtfPriceService', () => {
             expect(result.close).toBe(104.50);
         });
 
+        it('should skip quotes with NaN close values', () => {
+            const quotes = [
+                { date: new Date('2024-01-14'), close: NaN },
+                { date: new Date('2024-01-13'), close: 104.50 }
+            ];
+            const targetDate = new Date('2024-01-15');
+
+            const result = service._findBestPriceData(quotes, targetDate);
+
+            expect(result.close).toBe(104.50);
+        });
+
+        it('should skip quotes with zero or negative close values', () => {
+            const quotes = [
+                { date: new Date('2024-01-15'), close: 0 },
+                { date: new Date('2024-01-14'), close: -5 },
+                { date: new Date('2024-01-13'), close: 104.50 }
+            ];
+            const targetDate = new Date('2024-01-15');
+
+            const result = service._findBestPriceData(quotes, targetDate);
+
+            expect(result.close).toBe(104.50);
+        });
+
         it('should return null for empty quotes', () => {
             const result = service._findBestPriceData([], new Date());
 
             expect(result).toBeNull();
         });
 
-        it('should fallback to any available quote when no match found', () => {
+        it('should return null when all close values are invalid', () => {
+            const quotes = [
+                { date: new Date('2024-01-15'), close: null },
+                { date: new Date('2024-01-14'), close: NaN },
+                { date: new Date('2024-01-13'), close: 0 }
+            ];
+
+            const result = service._findBestPriceData(quotes, new Date('2024-01-15'));
+
+            expect(result).toBeNull();
+        });
+
+        it('should fallback to any available quote when no match found before target', () => {
             const quotes = [
                 { date: new Date('2024-01-20'), close: 106.00 },
                 { date: new Date('2024-01-21'), close: 107.00 }
