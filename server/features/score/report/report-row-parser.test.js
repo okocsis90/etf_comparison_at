@@ -31,7 +31,6 @@ describe('ReportRowParser', () => {
 
             expect(result).toEqual({
                 date: '15.01.2024',
-                isYearlyReport: true,
                 businessYearStart: '01.01.2023',
                 businessYearEnd: '31.12.2023',
             });
@@ -67,7 +66,6 @@ describe('ReportRowParser', () => {
             const result = await ReportRowParser.parse(row);
 
             expect(result).not.toBeNull();
-            expect(result.isYearlyReport).toBe(true);
         });
 
         test('should handle uppercase "JA"', async () => {

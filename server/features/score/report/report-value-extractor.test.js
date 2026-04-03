@@ -24,8 +24,16 @@ describe('ReportValueExtractor', () => {
             expect(ReportValueExtractor.parseGermanDecimal(' 1,23 ')).toBeCloseTo(1.23);
         });
 
-        test('should return NaN for non-numeric input', () => {
-            expect(ReportValueExtractor.parseGermanDecimal('abc')).toBeNaN();
+        test('should return null for non-numeric input', () => {
+            expect(ReportValueExtractor.parseGermanDecimal('abc')).toBeNull();
+        });
+
+        test('should return null for empty string', () => {
+            expect(ReportValueExtractor.parseGermanDecimal('')).toBeNull();
+        });
+
+        test('should return null for null input', () => {
+            expect(ReportValueExtractor.parseGermanDecimal(null)).toBeNull();
         });
     });
 

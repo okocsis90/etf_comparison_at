@@ -35,7 +35,7 @@ class ReportPage {
 
     // --- Element Access ---
 
-    async waitForChevron() {
+    async _waitForChevron() {
         await this.page.waitForSelector(reportSelectors.chevron, { visible: true });
         return this.page.$(reportSelectors.chevron);
     }
@@ -69,7 +69,7 @@ class ReportPage {
      * Clicks the chevron to expand the report accordion.
      */
     async clickChevron() {
-        const chevron = await this.waitForChevron();
+        const chevron = await this._waitForChevron();
         if (!chevron) throw new Error('Chevron icon not found');
         await this.scrollAndClick(chevron);
         await delay(800);

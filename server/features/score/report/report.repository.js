@@ -23,6 +23,7 @@ class ReportRepository {
      * @returns {ReportResult|null}
      */
     findFresh(isin) {
+        if (!isin) throw new Error('isin is required');
         if (this._isFetchAllowed(isin)) return null;
 
         const rows = getDb()
@@ -57,12 +58,14 @@ class ReportRepository {
      */
     save(reportResult) {
         const { isin, currency, reports } = reportResult;
+        if (!isin) throw new Error('isin is required');
         if (!reports || reports.length === 0) return;
 
         const fetchedAt = new Date().toISOString();
         const nextFetchAllowedAt = _calculateNextFetchDate(reports).toISOString();
 
         const db = getDb();
+        const deleteOld = db.prepare('DELETE FROM oekb_reports WHERE isin = ?');
         const insert = db.prepare(`
             INSERT OR REPLACE INTO oekb_reports
                 (isin, currency, date, deemed_income, business_year_start, business_year_end,
@@ -71,6 +74,7 @@ class ReportRepository {
         `);
 
         const saveAll = db.transaction(() => {
+            deleteOld.run(isin);
             for (const report of reports) {
                 insert.run(
                     isin,

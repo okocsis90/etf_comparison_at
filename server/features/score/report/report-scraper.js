@@ -4,7 +4,7 @@ import { delay } from '../../../shared/utils.js';
 import ReportValueExtractor from './report-value-extractor.js';
 import ReportResult from './report-result.js';
 import ReportRowParser from './report-row-parser.js';
-import Logger from '../../../shared/logger.js';
+import logger from '../../../shared/logger.js';
 
 /**
  * Orchestrates the scraping process for the report page.
@@ -67,9 +67,9 @@ class ReportScraper {
     async _extractCurrency() {
         const currency = await ReportValueExtractor.extractCurrencyValue(this.reportPage.page);
         if (currency) {
-            Logger.info(`Currency value: ${currency}`);
+            logger.info(`Currency value: ${currency}`);
         } else {
-            Logger.warn('Currency value not found');
+            logger.warn('Currency value not found');
         }
         return currency;
     }
@@ -99,7 +99,7 @@ class ReportScraper {
     async _extractReportFromRow(row, rowIndex) {
         const rowData = await ReportRowParser.parse(row);
         if (!rowData) {
-            Logger.info(`Row ${rowIndex + 1}: Skipped (Not a yearly report or missing columns)`);
+            logger.info(`Row ${rowIndex + 1}: Skipped (Not a yearly report or missing columns)`);
             return null;
         }
 
@@ -113,7 +113,7 @@ class ReportScraper {
         const deemedIncome = await ReportValueExtractor.extractDeemedIncomeValue(detailsTable);
 
         if (deemedIncome !== null) {
-            Logger.info(`Row ${rowIndex + 1}: Deemed income = ${deemedIncome}`);
+            logger.info(`Row ${rowIndex + 1}: Deemed income = ${deemedIncome}`);
             return {
                 date: rowData.date,
                 deemedIncome,
@@ -122,7 +122,7 @@ class ReportScraper {
             };
         }
 
-        Logger.warn(`Row ${rowIndex + 1}: No deemed income (936/937) found`);
+        logger.warn(`Row ${rowIndex + 1}: No deemed income (936/937) found`);
         return null;
     }
 

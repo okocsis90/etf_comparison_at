@@ -88,14 +88,14 @@ describe('ReportPage', () => {
         });
     });
 
-    describe('waitForChevron', () => {
+    describe('_waitForChevron', () => {
         test('should wait for chevron selector and return element', async () => {
             const mockChevron = { click: jest.fn() };
             mockPage.waitForSelector.mockResolvedValue(undefined);
             mockPage.$.mockResolvedValue(mockChevron);
 
             const page = new ReportPage(mockPage, 'IE00BK5BQX27');
-            const chevron = await page.waitForChevron();
+            const chevron = await page._waitForChevron();
 
             expect(mockPage.waitForSelector).toHaveBeenCalledWith(
                 'a[role="button"].p-accordion-header-link chevronrighticon',

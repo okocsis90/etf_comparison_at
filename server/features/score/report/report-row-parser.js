@@ -16,7 +16,7 @@ class ReportRowParser {
     /**
      * Parses a Puppeteer row element for report data.
      * @param {ElementHandle} row - Puppeteer row element
-     * @returns {Promise<{date: string, isYearlyReport: boolean, businessYearStart: string, businessYearEnd: string}|null>}
+     * @returns {Promise<{date: string, businessYearStart: string, businessYearEnd: string}|null>}
      */
     static async parse(row) {
         const tds = await row.$$(reportSelectors.rowTd);
@@ -30,7 +30,7 @@ class ReportRowParser {
         const businessYearStart = await ReportRowParser.extractCellText(tds[ReportRowParser.BUSINESS_YEAR_START_INDEX]);
         const businessYearEnd = await ReportRowParser.extractCellText(tds[ReportRowParser.BUSINESS_YEAR_END_INDEX]);
 
-        return { date, isYearlyReport, businessYearStart, businessYearEnd };
+        return { date, businessYearStart, businessYearEnd };
     }
 
     /**

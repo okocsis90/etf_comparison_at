@@ -46,6 +46,13 @@ describe('ReportService', () => {
         mockRepository.save.mockReturnValue(undefined);
     });
 
+    describe('getReportResult - input validation', () => {
+        test('should throw if isin is missing', async () => {
+            await expect(service.getReportResult('')).rejects.toThrow('isin is required');
+            await expect(service.getReportResult(null)).rejects.toThrow('isin is required');
+        });
+    });
+
     describe('getReportResult - cache miss (scrapes OeKB)', () => {
         test('should create scraper, launch browser, scrape, close and save result', async () => {
             const expectedResult = {

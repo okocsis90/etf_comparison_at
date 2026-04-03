@@ -34,11 +34,14 @@ export default class ReportValueExtractor {
 
     /**
      * Parses a German-formatted decimal string (comma as decimal separator).
+     * Returns null if the input is empty or cannot be parsed as a finite number.
      * @param {string} text - The text to parse
-     * @returns {number}
+     * @returns {number|null}
      */
     static parseGermanDecimal(text) {
-        return parseFloat(text.replace(',', '.'));
+        if (!text || typeof text !== 'string') return null;
+        const value = parseFloat(text.trim().replace(',', '.'));
+        return Number.isFinite(value) ? value : null;
     }
 
     /**
