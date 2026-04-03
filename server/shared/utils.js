@@ -3,6 +3,21 @@ export function delay(ms) {
 }
 
 /**
+ * Converts a Date (or any date-like value) to an ISO date key string ("YYYY-MM-DD").
+ * Used as a consistent cache key format across all repositories.
+ * @param {Date|string|number} date
+ * @returns {string} e.g. "2024-01-15"
+ * @throws {Error} if the value cannot be parsed into a valid date
+ */
+export function toDateKey(date) {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) {
+    throw new Error(`Cannot convert to date key: invalid date value "${date}"`);
+  }
+  return d.toISOString().split('T')[0];
+}
+
+/**
  * Parses a German date string (DD.MM.YYYY) into a JavaScript Date object.
  * @param {string} dateStr - Date string in format "DD.MM.YYYY"
  * @returns {Date} Parsed date object

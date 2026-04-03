@@ -1,5 +1,6 @@
 import getDb from '../../../shared/db/database.js';
 import logger from '../../../shared/logger.js';
+import { toDateKey } from '../../../shared/utils.js';
 
 /**
  * Repository for caching currency exchange rates to EUR.
@@ -13,7 +14,8 @@ class ExchangeRateRepository {
      * @returns {{currency: string, date: string, exchangeRateCurrencyToEur: number}|null}
      */
     find(currency, requestDate) {
-        const dateKey = _toDateKey(requestDate);
+        if (!currency) throw new Error('currency is required');
+        const dateKey = toDateKey(requestDate);
         const row = getDb()
             .prepare('SELECT * FROM exchange_rates WHERE currency = ? AND request_date = ?')
             .get(currency.toUpperCase(), dateKey);
@@ -37,8 +39,9 @@ class ExchangeRateRepository {
      * @param {number} exchangeRateCurrencyToEur
      */
     save(currency, requestDate, resultDate, exchangeRateCurrencyToEur) {
-        const requestDateKey = _toDateKey(requestDate);
-        const resultDateKey = _toDateKey(resultDate);
+        if (!currency) throw new Error('currency is required');
+        const requestDateKey = toDateKey(requestDate);
+        const resultDateKey = toDateKey(resultDate);
         getDb()
             .prepare(`
                 INSERT OR REPLACE INTO exchange_rates
@@ -49,10 +52,6 @@ class ExchangeRateRepository {
 
         logger.info(`Cached exchange rate ${currency} on ${requestDateKey}: ${exchangeRateCurrencyToEur}`);
     }
-}
-
-function _toDateKey(date) {
-    return new Date(date).toISOString().split('T')[0];
 }
 
 export default ExchangeRateRepository;
