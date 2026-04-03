@@ -13,6 +13,21 @@ class ScoreCalculatorService {
    * @returns {ScoreResult} The calculated score metrics
    */
   calculateScore(scoreInput) {
+    if (!scoreInput) throw new Error('scoreInput is required');
+    if (!scoreInput.isin) throw new Error('scoreInput.isin is required');
+    if (!Array.isArray(scoreInput.reports)) throw new Error('scoreInput.reports must be an array');
+
+    const numericFields = [
+      'etfPriceAtFirstBusinessYearStartEur',
+      'etfPriceAtLastBusinessYearEndEur',
+      'currentEtfPriceEur',
+    ];
+    for (const field of numericFields) {
+      if (!Number.isFinite(scoreInput[field])) {
+        throw new Error(`scoreInput.${field} must be a finite number, got: ${scoreInput[field]}`);
+      }
+    }
+
     logger.info(`Calculating score for ISIN: ${scoreInput.isin}`);
 
     const {
@@ -51,8 +66,8 @@ class ScoreCalculatorService {
       });
     });
 
-    // Average of deemed income to ETF price percentages
-    const avgEtfPriceToDeemedIncomePercent = reportMetrics.length > 0
+    // Average of (deemed income / ETF price) percentages across all reports
+    const avgDeemedIncomeToEtfPricePercent = reportMetrics.length > 0
       ? reportMetrics.reduce((sum, m) => sum + m.deemedIncomeToEtfPricePercent, 0) / reportMetrics.length
       : 0;
 
@@ -84,7 +99,7 @@ class ScoreCalculatorService {
       deemedGains,
       deemedGainsToTotalGainsPercent,
       reportMetrics,
-      avgEtfPriceToDeemedIncomePercent,
+      avgDeemedIncomeToEtfPricePercent,
       avgDeemedIncomeEur,
       maxDeemedIncomeDiffEur,
       maxDiffToAvgEtfPricePercent,

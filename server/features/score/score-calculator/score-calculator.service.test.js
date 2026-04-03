@@ -52,7 +52,40 @@ describe('ScoreCalculatorService', () => {
         jest.clearAllMocks();
     });
 
-    // --- Return type ---
+    // --- input validation ---
+
+    describe('input validation', () => {
+        test('should throw when scoreInput is null', () => {
+            expect(() => service.calculateScore(null)).toThrow('scoreInput is required');
+        });
+
+        test('should throw when isin is missing', () => {
+            expect(() => service.calculateScore(makeInput({ isin: '' }))).toThrow('scoreInput.isin is required');
+        });
+
+        test('should throw when reports is not an array', () => {
+            const input = makeInput();
+            input.reports = null;
+            expect(() => service.calculateScore(input)).toThrow('scoreInput.reports must be an array');
+        });
+
+        test('should throw when a price field is NaN', () => {
+            expect(() => service.calculateScore(makeInput({ etfPriceAtFirstBusinessYearStartEur: NaN })))
+                .toThrow('etfPriceAtFirstBusinessYearStartEur must be a finite number');
+        });
+
+        test('should throw when a price field is Infinity', () => {
+            expect(() => service.calculateScore(makeInput({ currentEtfPriceEur: Infinity })))
+                .toThrow('currentEtfPriceEur must be a finite number');
+        });
+
+        test('should throw when a price field is undefined', () => {
+            expect(() => service.calculateScore(makeInput({ etfPriceAtLastBusinessYearEndEur: undefined })))
+                .toThrow('etfPriceAtLastBusinessYearEndEur must be a finite number');
+        });
+    });
+
+    // --- return type ---
 
     describe('return type', () => {
         test('should return a ScoreResult instance', () => {
@@ -263,9 +296,9 @@ describe('ScoreCalculatorService', () => {
         });
     });
 
-    // --- avgEtfPriceToDeemedIncomePercent ---
+    // --- avgDeemedIncomeToEtfPricePercent ---
 
-    describe('avgEtfPriceToDeemedIncomePercent', () => {
+    describe('avgDeemedIncomeToEtfPricePercent', () => {
         test('should be average of per-report deemedIncomeToEtfPricePercent values', () => {
             // report 1: 1/100 * 100 = 1%,  report 2: 3/100 * 100 = 3%  → avg = 2%
             const input = makeInput({
@@ -275,11 +308,11 @@ describe('ScoreCalculatorService', () => {
                 ],
             });
 
-            expect(service.calculateScore(input).avgEtfPriceToDeemedIncomePercent).toBeCloseTo(2);
+            expect(service.calculateScore(input).avgDeemedIncomeToEtfPricePercent).toBeCloseTo(2);
         });
 
         test('should be zero when there are no reports', () => {
-            expect(service.calculateScore(makeInput()).avgEtfPriceToDeemedIncomePercent).toBe(0);
+            expect(service.calculateScore(makeInput()).avgDeemedIncomeToEtfPricePercent).toBe(0);
         });
 
         test('should equal the single report value when there is only one report', () => {
@@ -288,7 +321,7 @@ describe('ScoreCalculatorService', () => {
             });
 
             // 2/40*100 = 5%
-            expect(service.calculateScore(input).avgEtfPriceToDeemedIncomePercent).toBeCloseTo(5);
+            expect(service.calculateScore(input).avgDeemedIncomeToEtfPricePercent).toBeCloseTo(5);
         });
     });
 
@@ -484,9 +517,7 @@ describe('ScoreCalculatorService', () => {
             expect(result.maxDeemedIncomeDiffEur).toBeCloseTo(1.0);
             // avg ETF price = (55+65+75)/3 = 65, max diff = 1.0 → 1/65*100 ≈ 1.538%
             expect(result.maxDiffToAvgEtfPricePercent).toBeCloseTo(1.538, 2);
-            // avg ETF price = (55+65+75)/3 = 65, max diff = 1.0 → 1/65*100 ≈ 1.538%
-            expect(result.maxDiffToAvgEtfPricePercent).toBeCloseTo(1.538, 2);
-            expect(result.avgEtfPriceToDeemedIncomePercent).toBeCloseTo(2.298, 2);
+            expect(result.avgDeemedIncomeToEtfPricePercent).toBeCloseTo(2.298, 2);
             expect(result.avgDeemedIncomeToCurrentEtfPricePercent).toBeCloseTo(1.667, 2);
             expect(result.totalReports).toBe(3);
         });

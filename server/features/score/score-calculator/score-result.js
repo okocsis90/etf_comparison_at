@@ -19,7 +19,7 @@
  * @property {number} deemedGains - Sum of all deemed incomes (EUR)
  * @property {number} deemedGainsToTotalGainsPercent - Deemed gains as percentage of total gains
  * @property {ReportMetric[]} reportMetrics - Per-report metrics
- * @property {number} avgEtfPriceToDeemedIncomePercent - Average of deemed income to ETF price percentages
+ * @property {number} avgDeemedIncomeToEtfPricePercent - Average of (deemed income / ETF price) percentages across all reports
  * @property {number} avgDeemedIncomeEur - Average deemed income in EUR
  * @property {number} maxDeemedIncomeDiffEur - Maximum difference between any two deemed incomes
  * @property {number} maxDiffToAvgEtfPricePercent - Max deemed income diff as percentage of average ETF price on report dates
@@ -54,7 +54,7 @@ class ScoreResult {
     deemedGains,
     deemedGainsToTotalGainsPercent,
     reportMetrics = [],
-    avgEtfPriceToDeemedIncomePercent,
+    avgDeemedIncomeToEtfPricePercent,
     avgDeemedIncomeEur,
     maxDeemedIncomeDiffEur,
     maxDiffToAvgEtfPricePercent,
@@ -72,7 +72,7 @@ class ScoreResult {
     this.deemedGains = deemedGains;
     this.deemedGainsToTotalGainsPercent = deemedGainsToTotalGainsPercent;
     this.reportMetrics = reportMetrics;
-    this.avgEtfPriceToDeemedIncomePercent = avgEtfPriceToDeemedIncomePercent;
+    this.avgDeemedIncomeToEtfPricePercent = avgDeemedIncomeToEtfPricePercent;
     this.avgDeemedIncomeEur = avgDeemedIncomeEur;
     this.maxDeemedIncomeDiffEur = maxDeemedIncomeDiffEur;
     this.maxDiffToAvgEtfPricePercent = maxDiffToAvgEtfPricePercent;
