@@ -27,6 +27,14 @@ import EtfPriceRepository from './etf-price.repository.js';
 class EtfPriceService {
     constructor() {
         this.yahooFinance = new YahooFinance();
+        // Suppress the "version out of date" console notice and reduce validation noise.
+        // allowAdditionalProps is already true by default but set explicitly for clarity.
+        this.yahooFinance._opts.versionCheck = false;
+        this.yahooFinance._opts.validation = {
+            logErrors: false,
+            logOptionsErrors: false,
+            allowAdditionalProps: true,
+        };
         this.repository = new EtfPriceRepository();
         /** @type {Map<string, string>} in-memory ISIN → ticker cache */
         this._tickerCache = new Map();
@@ -134,24 +142,34 @@ class EtfPriceService {
             return this._tickerCache.get(isin);
         }
 
+        let results = null;
         try {
-            const results = await this.yahooFinance.search(isin);
-            if (!results?.quotes?.length) return null;
-
-            const euroQuote = results.quotes.find(q =>
-                q.symbol.endsWith('.DE') ||
-                q.symbol.endsWith('.AS') ||
-                q.symbol.endsWith('.PA') ||
-                q.symbol.endsWith('.MI')
-            );
-            const ticker = euroQuote ? euroQuote.symbol : results.quotes[0].symbol;
-
-            this._tickerCache.set(isin, ticker);
-            return ticker;
+            results = await this.yahooFinance.search(isin);
         } catch (error) {
-            logger.error(`Failed to search ticker for ISIN ${isin}: ${error.message}`);
-            return null;
+            // FailedYahooValidationError still carries a `result` property with the
+            // raw (partially-matching) data. Use it so a schema change doesn't make
+            // every ISIN lookup fail.
+            if (error?.result?.quotes) {
+                logger.warn(`Yahoo schema validation warning for ISIN ${isin} – using partial result: ${error.message}`);
+                results = error.result;
+            } else {
+                logger.error(`Failed to search ticker for ISIN ${isin}: ${error.message}`);
+                return null;
+            }
         }
+
+        if (!results?.quotes?.length) return null;
+
+        const euroQuote = results.quotes.find(q =>
+            q.symbol.endsWith('.DE') ||
+            q.symbol.endsWith('.AS') ||
+            q.symbol.endsWith('.PA') ||
+            q.symbol.endsWith('.MI')
+        );
+        const ticker = euroQuote ? euroQuote.symbol : results.quotes[0].symbol;
+
+        this._tickerCache.set(isin, ticker);
+        return ticker;
     }
 
     /**
@@ -164,11 +182,21 @@ class EtfPriceService {
      * @private
      */
     async _fetchChartPrice(ticker, targetDate, startDate, endDate) {
-        const chart = await this.yahooFinance.chart(ticker, {
-            period1: startDate,
-            period2: endDate,
-            interval: '1d'
-        });
+        let chart = null;
+        try {
+            chart = await this.yahooFinance.chart(ticker, {
+                period1: startDate,
+                period2: endDate,
+                interval: '1d'
+            });
+        } catch (error) {
+            if (error?.result?.quotes) {
+                logger.warn(`Yahoo schema validation warning for chart ${ticker} – using partial result: ${error.message}`);
+                chart = error.result;
+            } else {
+                throw error;
+            }
+        }
 
         if (!chart?.quotes?.length) {
             throw new Error(`No price data found for ${ticker} around ${targetDate.toISOString().split('T')[0]}`);
@@ -229,7 +257,17 @@ class EtfPriceService {
      * @private
      */
     async _fetchQuotePrice(ticker) {
-        const quote = await this.yahooFinance.quote(ticker);
+        let quote = null;
+        try {
+            quote = await this.yahooFinance.quote(ticker);
+        } catch (error) {
+            if (error?.result) {
+                logger.warn(`Yahoo schema validation warning for quote ${ticker} – using partial result: ${error.message}`);
+                quote = error.result;
+            } else {
+                throw error;
+            }
+        }
 
         // Try multiple price fields in order of preference
         const price = quote.regularMarketPrice ?? quote.price ?? quote.bid ?? quote.ask;
