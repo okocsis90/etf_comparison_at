@@ -29,12 +29,19 @@ export default function EtfScoreResult({ data }) {
           <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
           <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
         </Box>
-        <TaxGradeBadge
-          grade={data.taxEfficiencyGrade}
-          score={data.taxEfficiencyScore}
-          breakdown={data.taxEfficiencyScoreBreakdown}
-          onClick={() => setDialogOpen(true)}
-        />
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch' }}>
+          <ConfidenceBadge
+            level={data.confidenceLevel}
+            label={data.confidenceLabel}
+            totalReports={data.totalReports}
+          />
+          <TaxGradeBadge
+            grade={data.taxEfficiencyGrade}
+            score={data.taxEfficiencyScore}
+            breakdown={data.taxEfficiencyScoreBreakdown}
+            onClick={() => setDialogOpen(true)}
+          />
+        </Box>
       </Box>
 
       <ScoreBreakdownDialog

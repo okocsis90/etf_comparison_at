@@ -100,6 +100,8 @@ class ScoreCalculatorService {
         reportMetrics,
       });
 
+    const { confidenceLevel, confidenceLabel } = this._calculateConfidence(reports.length);
+
     return new ScoreResult({
       isin,
       originalCurrency,
@@ -121,6 +123,8 @@ class ScoreCalculatorService {
       taxEfficiencyGrade,
       taxEfficiencyScore,
       taxEfficiencyScoreBreakdown,
+      confidenceLevel,
+      confidenceLabel,
     });
   }
 
@@ -226,7 +230,31 @@ class ScoreCalculatorService {
   }
 
   /**
-   * Calculates the maximum difference between any two values in the array.
+   * Derives a data-confidence level from the number of available yearly reports.
+   *
+   * More years of data reveal longer-term patterns in deemed income behaviour
+   * and reduce the risk that a single unusual year skews the analysis.
+   *
+   * | Reports | Level | Label         |
+   * |---------|-------|---------------|
+   * | 1–2     |   1   | Preliminary   |
+   * | 3–4     |   2   | Limited       |
+   * | 5–6     |   3   | Moderate      |
+   * | 7–8     |   4   | Reliable      |
+   * | 9+      |   5   | Comprehensive |
+   *
+   * @param {number} reportCount
+   * @returns {{ confidenceLevel: 1|2|3|4|5, confidenceLabel: string }}
+   */
+  _calculateConfidence(reportCount) {
+    if (reportCount >= 9) return { confidenceLevel: 5, confidenceLabel: 'Comprehensive' };
+    if (reportCount >= 7) return { confidenceLevel: 4, confidenceLabel: 'Reliable' };
+    if (reportCount >= 5) return { confidenceLevel: 3, confidenceLabel: 'Moderate' };
+    if (reportCount >= 3) return { confidenceLevel: 2, confidenceLabel: 'Limited' };
+    return                       { confidenceLevel: 1, confidenceLabel: 'Preliminary' };
+  }
+
+  /**
    * @param {number[]} values - Array of numeric values
    * @returns {number} Maximum difference
    */

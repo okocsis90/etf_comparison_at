@@ -33,6 +33,8 @@
  * @property {'A'|'B'|'C'|'D'|'E'} taxEfficiencyGrade - Overall Austrian tax-efficiency grade
  * @property {number} taxEfficiencyScore - Numeric score 0-100 backing the grade
  * @property {{ taxBurden: object, consistency: object, deemedToGains: object }} taxEfficiencyScoreBreakdown - Per-component score details
+ * @property {1|2|3|4|5} confidenceLevel - Data confidence level (1 = Preliminary … 5 = Comprehensive)
+ * @property {'Preliminary'|'Limited'|'Moderate'|'Reliable'|'Comprehensive'} confidenceLabel - Human-readable confidence label
  */
 
 class ReportMetric {
@@ -71,6 +73,8 @@ class ScoreResult {
     taxEfficiencyGrade,
     taxEfficiencyScore,
     taxEfficiencyScoreBreakdown,
+    confidenceLevel,
+    confidenceLabel,
   }) {
     this.isin = isin;
     this.originalCurrency = originalCurrency;
@@ -92,6 +96,8 @@ class ScoreResult {
     this.taxEfficiencyGrade = taxEfficiencyGrade;
     this.taxEfficiencyScore = taxEfficiencyScore;
     this.taxEfficiencyScoreBreakdown = taxEfficiencyScoreBreakdown;
+    this.confidenceLevel = confidenceLevel;
+    this.confidenceLabel = confidenceLabel;
   }
 }
 

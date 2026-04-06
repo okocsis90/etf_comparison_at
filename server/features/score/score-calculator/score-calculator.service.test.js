@@ -701,4 +701,40 @@ describe('ScoreCalculatorService', () => {
             expect(spread).toBeGreaterThan(tight);
         });
     });
+
+    // --- _calculateConfidence ---
+
+    describe('_calculateConfidence', () => {
+        test.each([
+            [0, 1, 'Preliminary'],
+            [1, 1, 'Preliminary'],
+            [2, 1, 'Preliminary'],
+            [3, 2, 'Limited'],
+            [4, 2, 'Limited'],
+            [5, 3, 'Moderate'],
+            [6, 3, 'Moderate'],
+            [7, 4, 'Reliable'],
+            [8, 4, 'Reliable'],
+            [9, 5, 'Comprehensive'],
+            [12, 5, 'Comprehensive'],
+        ])('%i report(s) → level %i (%s)', (count, level, label) => {
+            const result = service._calculateConfidence(count);
+            expect(result.confidenceLevel).toBe(level);
+            expect(result.confidenceLabel).toBe(label);
+        });
+
+        test('should include confidenceLevel and confidenceLabel in ScoreResult', () => {
+            const input = makeInput({
+                reports: [
+                    makeReport(), makeReport(), makeReport(),
+                    makeReport(), makeReport(), makeReport(), makeReport(),
+                ],
+            });
+
+            const result = service.calculateScore(input);
+
+            expect(result.confidenceLevel).toBe(4);
+            expect(result.confidenceLabel).toBe('Reliable');
+        });
+    });
 });
