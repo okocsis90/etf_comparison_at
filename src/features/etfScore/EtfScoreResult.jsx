@@ -90,6 +90,15 @@ const GRADE_LABELS = {
   E: 'High Tax Drag',
 };
 
+/** Maps a 0-100 score to the same green→red scale used by the grade badge. */
+const scoreToColor = (score) => {
+  if (score >= 80) return GRADE_COLORS.A;
+  if (score >= 60) return GRADE_COLORS.B;
+  if (score >= 40) return GRADE_COLORS.C;
+  if (score >= 20) return GRADE_COLORS.D;
+  return GRADE_COLORS.E;
+};
+
 function TaxGradeBadge({ grade, score, breakdown }) {
   const color = GRADE_COLORS[grade] ?? '#546e7a';
 
@@ -280,7 +289,7 @@ export default function EtfScoreResult({ data }) {
             title="Avg Deemed / ETF Price %"
             value={pct(data.avgDeemedIncomeToEtfPricePercent)}
             color="#00796b"
-            tooltip="Average of (deemed income / ETF price on report date) across all reports"
+            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax drag indicator"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -288,23 +297,28 @@ export default function EtfScoreResult({ data }) {
             title="Max Deemed Income Diff"
             value={eur(data.maxDeemedIncomeDiffEur)}
             color="#d32f2f"
-            tooltip="Maximum difference between any two yearly deemed incomes — indicates volatility"
+            tooltip="Largest absolute difference in deemed income between any two years — shows worst-case year-to-year swing in EUR"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Max Diff / Avg ETF Price %"
+            title="Max Swing / Avg Price"
             value={pct(data.maxDiffToAvgEtfPricePercent)}
             color="#d32f2f"
-            tooltip="Max deemed income difference as a % of average ETF price on report dates"
+            tooltip="Max deemed income swing as a % of average ETF price — answers 'how large was the worst-case annual tax base jump relative to my holding value?'"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Analysis Period"
-            value={`${data.totalReports} years`}
-            subtitle={`${dateLabel(data.firstBusinessYearStart)} → ${dateLabel(data.lastBusinessYearEnd)}`}
-            color="#546e7a"
+            title="Predictability Score"
+            value={`${data.taxEfficiencyScoreBreakdown.consistency.score} / 100`}
+            subtitle={
+              data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation !== null
+                ? `CV: ${data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation.toFixed(3)}`
+                : 'Insufficient data (< 2 reports)'
+            }
+            color={scoreToColor(data.taxEfficiencyScoreBreakdown.consistency.score)}
+            tooltip="Measures how stable the annual deemed income is relative to its own average, using the Coefficient of Variation (CV = stddev / mean of yearly deemed/price ratios). Unlike the Max Swing card, this is scale-independent — a high-but-stable ETF still scores well here. Score 100 = perfectly consistent, 0 = chaotic."
           />
         </Grid>
       </Grid>
