@@ -27,9 +27,7 @@ class ReportScraper {
 
     async launchBrowser() {
         this.browser = await puppeteer.launch({
-            headless: false,
-            defaultViewport: null,
-            args: ['--start-maximized'],
+            headless: true,
         });
         const page = await this.browser.newPage();
         this.reportPage = new ReportPage(page, this.isin);
