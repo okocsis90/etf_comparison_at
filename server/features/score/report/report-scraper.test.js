@@ -69,9 +69,7 @@ describe('ReportScraper', () => {
             await scraper.launchBrowser();
 
             expect(mockPuppeteer.launch).toHaveBeenCalledWith({
-                headless: false,
-                defaultViewport: null,
-                args: ['--start-maximized'],
+                headless: true,
             });
             expect(scraper.browser).toBe(mockBrowser);
             expect(scraper.reportPage).not.toBeNull();

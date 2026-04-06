@@ -522,4 +522,183 @@ describe('ScoreCalculatorService', () => {
             expect(result.totalReports).toBe(3);
         });
     });
+
+    // --- taxEfficiencyGrade ---
+
+    describe('taxEfficiencyGrade', () => {
+        test('should include grade, score and breakdown in the result', () => {
+            const result = service.calculateScore(makeInput({
+                reports: [makeReport({ deemedIncomeEur: 0.5, etfPriceOnDateEur: 100 })],
+            }));
+
+            expect(['A', 'B', 'C', 'D', 'E']).toContain(result.taxEfficiencyGrade);
+            expect(result.taxEfficiencyScore).toBeGreaterThanOrEqual(0);
+            expect(result.taxEfficiencyScore).toBeLessThanOrEqual(100);
+            expect(result.taxEfficiencyScoreBreakdown).toBeDefined();
+            expect(result.taxEfficiencyScoreBreakdown.taxBurden).toBeDefined();
+            expect(result.taxEfficiencyScoreBreakdown.consistency).toBeDefined();
+            expect(result.taxEfficiencyScoreBreakdown.deemedToGains).toBeDefined();
+        });
+
+        test('should return A for a low-burden, consistent ETF', () => {
+            // avgDeemedToEtfPrice = 0.2 % → taxBurden = 90
+            // rates all 0.2 → CV = 0 → consistency = 100
+            // deemedGains = 3, totalGains = 60 → deemedToGains% = 5 % → deemedToGains score = 95
+            // total = 0.50*90 + 0.35*100 + 0.15*95 = 45 + 35 + 14.25 = 94.25 → A
+            const input = makeInput({
+                etfPriceAtFirstBusinessYearStartEur: 100,
+                etfPriceAtLastBusinessYearEndEur: 160,
+                currentEtfPriceEur: 160,
+                reports: [
+                    makeReport({ deemedIncomeEur: 1.0, etfPriceOnDateEur: 500 }), // 0.2 %
+                    makeReport({ deemedIncomeEur: 1.0, etfPriceOnDateEur: 500 }), // 0.2 %
+                    makeReport({ deemedIncomeEur: 1.0, etfPriceOnDateEur: 500 }), // 0.2 %
+                ],
+            });
+
+            expect(service.calculateScore(input).taxEfficiencyGrade).toBe('A');
+        });
+
+        test('should return E for a high-burden volatile ETF', () => {
+            // rates = [0.01, 6.0, 0.01] → avg ≈ 2.007 % → taxBurden = 0 (clamped)
+            // CV ≈ 1.41 → consistencyScore ≈ 6
+            // deemedGains = 6.02, totalGains = 5 → ratio ≈ 120 % → deemedToGains = 0
+            // numericScore ≈ 0.50*0 + 0.35*6 + 0.15*0 ≈ 2 → E
+            const input = makeInput({
+                etfPriceAtFirstBusinessYearStartEur: 100,
+                etfPriceAtLastBusinessYearEndEur: 105,
+                currentEtfPriceEur: 105,
+                reports: [
+                    makeReport({ deemedIncomeEur: 0.01, etfPriceOnDateEur: 100 }), // 0.01 %
+                    makeReport({ deemedIncomeEur: 6.0,  etfPriceOnDateEur: 100 }), // 6 %
+                    makeReport({ deemedIncomeEur: 0.01, etfPriceOnDateEur: 100 }), // 0.01 %
+                ],
+            });
+
+            expect(service.calculateScore(input).taxEfficiencyGrade).toBe('E');
+        });
+
+        test('should lower grade when consistency is poor despite moderate burden', () => {
+            // avgDeemedToEtfPrice ≈ 0.7 % → decent taxBurden ≈ 65
+            // rates [0.1, 2.0, 0.1] → high CV → consistency = 0
+            // Without consistency the score is pulled well below B
+            const input = makeInput({
+                etfPriceAtFirstBusinessYearStartEur: 100,
+                etfPriceAtLastBusinessYearEndEur: 150,
+                currentEtfPriceEur: 150,
+                reports: [
+                    makeReport({ deemedIncomeEur: 0.1, etfPriceOnDateEur: 100 }),
+                    makeReport({ deemedIncomeEur: 2.0, etfPriceOnDateEur: 100 }),
+                    makeReport({ deemedIncomeEur: 0.1, etfPriceOnDateEur: 100 }),
+                ],
+            });
+
+            const result = service.calculateScore(input);
+            // Should not reach B (60+) because consistency tanked it
+            expect(result.taxEfficiencyScore).toBeLessThan(60);
+        });
+
+        test('should redistribute weights when gains ratio is invalid (totalGains <= 0)', () => {
+            const input = makeInput({
+                etfPriceAtFirstBusinessYearStartEur: 150,
+                etfPriceAtLastBusinessYearEndEur: 100, // totalGains = -50 → component 3 excluded
+                currentEtfPriceEur: 100,
+                reports: [makeReport({ deemedIncomeEur: 0.3, etfPriceOnDateEur: 100 })],
+            });
+
+            const result = service.calculateScore(input);
+            const bd = result.taxEfficiencyScoreBreakdown;
+
+            expect(bd.deemedToGains.included).toBe(false);
+            expect(bd.deemedToGains.score).toBeNull();
+            expect(bd.deemedToGains.weight).toBe(0);
+            // Remaining weights must sum to 1
+            expect(bd.taxBurden.weight + bd.consistency.weight).toBeCloseTo(1);
+        });
+
+        test('should use neutral consistency score (50) when fewer than 2 reports', () => {
+            const input = makeInput({
+                reports: [makeReport({ deemedIncomeEur: 0.5, etfPriceOnDateEur: 100 })],
+            });
+
+            const bd = service.calculateScore(input).taxEfficiencyScoreBreakdown;
+
+            expect(bd.consistency.score).toBe(50);
+            expect(bd.consistency.coefficientOfVariation).toBeNull();
+        });
+
+        test('should achieve perfect score when all deemed incomes are zero', () => {
+            const input = makeInput({
+                etfPriceAtFirstBusinessYearStartEur: 100,
+                etfPriceAtLastBusinessYearEndEur: 200,
+                currentEtfPriceEur: 200,
+                reports: [
+                    makeReport({ deemedIncomeEur: 0, etfPriceOnDateEur: 150 }),
+                    makeReport({ deemedIncomeEur: 0, etfPriceOnDateEur: 160 }),
+                ],
+            });
+
+            const result = service.calculateScore(input);
+
+            expect(result.taxEfficiencyGrade).toBe('A');
+            expect(result.taxEfficiencyScore).toBe(100);
+        });
+
+        test('should include taxBurden component details', () => {
+            const input = makeInput({
+                reports: [makeReport({ deemedIncomeEur: 1, etfPriceOnDateEur: 100 })], // 1 %
+            });
+
+            const bd = service.calculateScore(input).taxEfficiencyScoreBreakdown;
+
+            // taxBurden score = 100 * (1 - 1/2) = 50
+            expect(bd.taxBurden.score).toBeCloseTo(50);
+            expect(bd.taxBurden.avgDeemedToEtfPricePct).toBeCloseTo(1);
+        });
+
+        test('should include CV in consistency breakdown when 2+ reports exist', () => {
+            const input = makeInput({
+                reports: [
+                    makeReport({ deemedIncomeEur: 1, etfPriceOnDateEur: 100 }),
+                    makeReport({ deemedIncomeEur: 3, etfPriceOnDateEur: 100 }),
+                ],
+            });
+
+            const bd = service.calculateScore(input).taxEfficiencyScoreBreakdown;
+
+            expect(bd.consistency.coefficientOfVariation).not.toBeNull();
+            expect(bd.consistency.coefficientOfVariation).toBeGreaterThan(0);
+        });
+    });
+
+    // --- _coefficientOfVariation ---
+
+    describe('_coefficientOfVariation', () => {
+        test('should return 0 for an empty array', () => {
+            expect(service._coefficientOfVariation([])).toBe(0);
+        });
+
+        test('should return 0 for a single value', () => {
+            expect(service._coefficientOfVariation([5])).toBe(0);
+        });
+
+        test('should return 0 when all values are identical', () => {
+            expect(service._coefficientOfVariation([3, 3, 3])).toBe(0);
+        });
+
+        test('should return 0 when the mean is zero', () => {
+            expect(service._coefficientOfVariation([0, 0, 0])).toBe(0);
+        });
+
+        test('should return 0.5 for [1, 3]', () => {
+            // mean=2, variance=((1-2)²+(3-2)²)/2=1, stddev=1, CV=1/2=0.5
+            expect(service._coefficientOfVariation([1, 3])).toBeCloseTo(0.5);
+        });
+
+        test('should return a larger CV for more spread-out values', () => {
+            const tight = service._coefficientOfVariation([1.0, 1.1, 0.9]);
+            const spread = service._coefficientOfVariation([0.1, 5.0, 0.2]);
+            expect(spread).toBeGreaterThan(tight);
+        });
+    });
 });

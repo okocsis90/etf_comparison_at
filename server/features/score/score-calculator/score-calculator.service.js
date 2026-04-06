@@ -92,6 +92,14 @@ class ScoreCalculatorService {
       ? (avgDeemedIncomeEur / currentEtfPriceEur) * 100
       : 0;
 
+    const { taxEfficiencyGrade, taxEfficiencyScore, taxEfficiencyScoreBreakdown } =
+      this._calculateTaxEfficiencyGrade({
+        avgDeemedIncomeToEtfPricePercent,
+        deemedGainsToTotalGainsPercent,
+        totalGains,
+        reportMetrics,
+      });
+
     return new ScoreResult({
       isin,
       originalCurrency,
@@ -109,8 +117,112 @@ class ScoreCalculatorService {
       etfPriceAtLastBusinessYearEndEur,
       firstBusinessYearStart,
       lastBusinessYearEnd,
-      totalReports: reports.length
+      totalReports: reports.length,
+      taxEfficiencyGrade,
+      taxEfficiencyScore,
+      taxEfficiencyScoreBreakdown,
     });
+  }
+
+  /**
+   * Calculates the Austrian tax-efficiency grade (A–E) and its numeric score.
+   *
+   * Three components, each scored 0–100:
+   *   1. Tax Burden     (base weight 50 %) – avg deemed income / ETF price %
+   *      Linear: 0 % → 100 pts, 2 %+ → 0 pts
+   *   2. Consistency    (base weight 35 %) – Coefficient of Variation of
+   *      per-year deemed/price ratios. CV 0 → 100 pts, CV ≥ 1.5 → 0 pts.
+   *      Fewer than 2 reports → neutral 50 pts (can't judge).
+   *   3. Deemed/Gains   (base weight 15 %) – deemed gains / total gains %.
+   *      Linear: 0 % → 100 pts, 100 %+ → 0 pts.
+   *      Excluded (weights redistributed proportionally) when total gains
+   *      are non-positive or the ratio is outside [0, 200 %].
+   *
+   * Grade thresholds: A ≥ 80, B ≥ 60, C ≥ 40, D ≥ 20, E < 20.
+   *
+   * @param {{ avgDeemedIncomeToEtfPricePercent: number, deemedGainsToTotalGainsPercent: number, totalGains: number, reportMetrics: import('./score-result.js').ReportMetric[] }} params
+   * @returns {{ taxEfficiencyGrade: string, taxEfficiencyScore: number, taxEfficiencyScoreBreakdown: object }}
+   */
+  _calculateTaxEfficiencyGrade({ avgDeemedIncomeToEtfPricePercent, deemedGainsToTotalGainsPercent, totalGains, reportMetrics }) {
+    const W1 = 0.50, W2 = 0.35, W3 = 0.15;
+
+    // ── Component 1: Annual Tax Burden ──────────────────────────────────────
+    const taxBurdenScore = Math.max(0, 100 * (1 - avgDeemedIncomeToEtfPricePercent / 2.0));
+
+    // ── Component 2: Year-over-Year Consistency ──────────────────────────────
+    const rates = reportMetrics.map(m => m.deemedIncomeToEtfPricePercent);
+    const cv = this._coefficientOfVariation(rates);
+    const consistencyScore = reportMetrics.length < 2
+      ? 50
+      : Math.max(0, 100 * (1 - cv / 1.5));
+
+    // ── Component 3: Deemed vs Total Gains ──────────────────────────────────
+    const gainsRatioUsable = totalGains > 0
+      && deemedGainsToTotalGainsPercent >= 0
+      && deemedGainsToTotalGainsPercent <= 200;
+    const deemedToGainsScore = gainsRatioUsable
+      ? Math.max(0, 100 - deemedGainsToTotalGainsPercent)
+      : null;
+
+    // ── Weighted total ───────────────────────────────────────────────────────
+    let numericScore;
+    let effectiveWeights;
+
+    if (deemedToGainsScore === null) {
+      // Redistribute component 3's weight proportionally between 1 and 2
+      const w1eff = W1 / (W1 + W2);
+      const w2eff = W2 / (W1 + W2);
+      effectiveWeights = { taxBurden: w1eff, consistency: w2eff, deemedToGains: 0 };
+      numericScore = taxBurdenScore * w1eff + consistencyScore * w2eff;
+    } else {
+      effectiveWeights = { taxBurden: W1, consistency: W2, deemedToGains: W3 };
+      numericScore = taxBurdenScore * W1 + consistencyScore * W2 + deemedToGainsScore * W3;
+    }
+
+    const grade = numericScore >= 80 ? 'A'
+      : numericScore >= 60 ? 'B'
+      : numericScore >= 40 ? 'C'
+      : numericScore >= 20 ? 'D'
+      : 'E';
+
+    const round1 = (v) => Math.round(v * 10) / 10;
+
+    return {
+      taxEfficiencyGrade: grade,
+      taxEfficiencyScore: round1(numericScore),
+      taxEfficiencyScoreBreakdown: {
+        taxBurden: {
+          score: round1(taxBurdenScore),
+          weight: effectiveWeights.taxBurden,
+          avgDeemedToEtfPricePct: avgDeemedIncomeToEtfPricePercent,
+        },
+        consistency: {
+          score: round1(consistencyScore),
+          weight: effectiveWeights.consistency,
+          coefficientOfVariation: reportMetrics.length < 2 ? null : round1(cv * 1000) / 1000,
+        },
+        deemedToGains: {
+          score: deemedToGainsScore !== null ? round1(deemedToGainsScore) : null,
+          weight: effectiveWeights.deemedToGains,
+          deemedGainsToTotalGainsPct: gainsRatioUsable ? deemedGainsToTotalGainsPercent : null,
+          included: gainsRatioUsable,
+        },
+      },
+    };
+  }
+
+  /**
+   * Coefficient of Variation: population stddev / mean.
+   * Returns 0 when fewer than 2 values are provided or when the mean is zero.
+   * @param {number[]} values
+   * @returns {number}
+   */
+  _coefficientOfVariation(values) {
+    if (values.length < 2) return 0;
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    if (mean === 0) return 0;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    return Math.sqrt(variance) / mean;
   }
 
   /**

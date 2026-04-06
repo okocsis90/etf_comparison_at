@@ -30,6 +30,9 @@
  * @property {Date} firstBusinessYearStart - First business year start date
  * @property {Date} lastBusinessYearEnd - Last business year end date
  * @property {number} totalReports - Total number of reports analyzed
+ * @property {'A'|'B'|'C'|'D'|'E'} taxEfficiencyGrade - Overall Austrian tax-efficiency grade
+ * @property {number} taxEfficiencyScore - Numeric score 0-100 backing the grade
+ * @property {{ taxBurden: object, consistency: object, deemedToGains: object }} taxEfficiencyScoreBreakdown - Per-component score details
  */
 
 class ReportMetric {
@@ -64,7 +67,10 @@ class ScoreResult {
     etfPriceAtLastBusinessYearEndEur,
     firstBusinessYearStart,
     lastBusinessYearEnd,
-    totalReports
+    totalReports,
+    taxEfficiencyGrade,
+    taxEfficiencyScore,
+    taxEfficiencyScoreBreakdown,
   }) {
     this.isin = isin;
     this.originalCurrency = originalCurrency;
@@ -83,6 +89,9 @@ class ScoreResult {
     this.firstBusinessYearStart = firstBusinessYearStart;
     this.lastBusinessYearEnd = lastBusinessYearEnd;
     this.totalReports = totalReports;
+    this.taxEfficiencyGrade = taxEfficiencyGrade;
+    this.taxEfficiencyScore = taxEfficiencyScore;
+    this.taxEfficiencyScoreBreakdown = taxEfficiencyScoreBreakdown;
   }
 }
 

@@ -11,6 +11,7 @@ import {
   TableRow,
   Paper,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import {
   ResponsiveContainer,
@@ -20,7 +21,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
 } from 'recharts';
 import MetricCard from './MetricCard';
@@ -71,6 +72,96 @@ function SectionTitle({ children }) {
   );
 }
 
+// ── Tax Efficiency Grade ──────────────────────────────────────────────────────
+
+const GRADE_COLORS = {
+  A: '#2e7d32',
+  B: '#558b2f',
+  C: '#f57f17',
+  D: '#e65100',
+  E: '#c62828',
+};
+
+const GRADE_LABELS = {
+  A: 'Excellent',
+  B: 'Good',
+  C: 'Moderate',
+  D: 'Poor',
+  E: 'High Tax Drag',
+};
+
+function TaxGradeBadge({ grade, score, breakdown }) {
+  const color = GRADE_COLORS[grade] ?? '#546e7a';
+
+  const tooltipContent = (
+    <Box sx={{ p: 0.5, maxWidth: 260 }}>
+      <Typography variant="caption" fontWeight={700} display="block" mb={1}>
+        Austrian Tax Efficiency — {score}/100
+      </Typography>
+
+      <Typography variant="caption" display="block">
+        <strong>Tax Burden</strong> ({Math.round(breakdown.taxBurden.weight * 100)} %):&nbsp;
+        {breakdown.taxBurden.score}/100
+        <br />
+        avg deemed/price: {breakdown.taxBurden.avgDeemedToEtfPricePct.toFixed(3)} %
+      </Typography>
+
+      <Typography variant="caption" display="block" mt={0.75}>
+        <strong>Consistency</strong> ({Math.round(breakdown.consistency.weight * 100)} %):&nbsp;
+        {breakdown.consistency.score}/100
+        {breakdown.consistency.coefficientOfVariation !== null && (
+          <> (CV: {breakdown.consistency.coefficientOfVariation.toFixed(3)})</>
+        )}
+        {breakdown.consistency.coefficientOfVariation === null && (
+          <> (insufficient data)</>
+        )}
+      </Typography>
+
+      {breakdown.deemedToGains.included ? (
+        <Typography variant="caption" display="block" mt={0.75}>
+          <strong>Deemed / Gains</strong> ({Math.round(breakdown.deemedToGains.weight * 100)} %):&nbsp;
+          {breakdown.deemedToGains.score}/100
+          <br />
+          {breakdown.deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} % of total gains taxed annually
+        </Typography>
+      ) : (
+        <Typography variant="caption" display="block" mt={0.75} sx={{ opacity: 0.7 }}>
+          <strong>Deemed / Gains</strong>: excluded (gains not positive or ratio out of range)
+        </Typography>
+      )}
+    </Box>
+  );
+
+  return (
+    <Tooltip title={tooltipContent} arrow placement="left">
+      <Box
+        sx={{
+          bgcolor: color,
+          color: 'white',
+          borderRadius: 2,
+          px: 2.5,
+          py: 1.5,
+          textAlign: 'center',
+          cursor: 'help',
+          minWidth: 90,
+          boxShadow: 3,
+          userSelect: 'none',
+        }}
+      >
+        <Typography variant="h2" fontWeight={900} lineHeight={1} color="inherit">
+          {grade}
+        </Typography>
+        <Typography variant="caption" fontWeight={700} color="inherit" display="block" mt={0.5} letterSpacing={0.5}>
+          TAX EFFICIENCY
+        </Typography>
+        <Typography variant="caption" color="inherit" sx={{ opacity: 0.85 }}>
+          {GRADE_LABELS[grade]}
+        </Typography>
+      </Box>
+    </Tooltip>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EtfScoreResult({ data }) {
@@ -86,12 +177,19 @@ export default function EtfScoreResult({ data }) {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {data.isin}
-        </Typography>
-        <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
-        <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {data.isin}
+          </Typography>
+          <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
+          <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
+        </Box>
+        <TaxGradeBadge
+          grade={data.taxEfficiencyGrade}
+          score={data.taxEfficiencyScore}
+          breakdown={data.taxEfficiencyScoreBreakdown}
+        />
       </Box>
 
       {/* ── Price Overview ─────────────────────────────────────────────────── */}
@@ -234,7 +332,7 @@ export default function EtfScoreResult({ data }) {
               tick={{ fontSize: 11 }}
               width={64}
             />
-            <Tooltip content={<ChartTooltip />} />
+            <RechartsTooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 13 }} />
             <Bar yAxisId="eur" dataKey="Deemed Income" fill="#e65100" opacity={0.85} radius={[3, 3, 0, 0]} />
             <Line yAxisId="eur" type="monotone" dataKey="ETF Price" stroke="#1976d2" strokeWidth={2} dot={{ r: 4 }} />
