@@ -56,7 +56,6 @@ export default function EtfScoreSearch() {
           onKeyDown={handleKeyDown}
           error={Boolean(formatError)}
           helperText={formatError || ' '}
-          inputProps={{ maxLength: 12, style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' } }}
           slotProps={{
             input: {
               startAdornment: (
@@ -64,6 +63,10 @@ export default function EtfScoreSearch() {
                   <SearchIcon color={formatError ? 'error' : 'action'} />
                 </InputAdornment>
               ),
+            },
+            htmlInput: {
+              maxLength: 12,
+              style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' },
             },
           }}
           sx={{ width: 320 }}
