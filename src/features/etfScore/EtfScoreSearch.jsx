@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { isValidIsin } from '../../utils/isinValidator';
-import { fetchScore } from '../../api/scoreApi';
+import { fetchScore } from './api/scoreApi';
 import EtfScoreResult from './EtfScoreResult';
 
 export default function EtfScoreSearch() {

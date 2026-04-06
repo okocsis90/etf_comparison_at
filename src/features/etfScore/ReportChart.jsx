@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import { eur, dateLabel } from '../../utils/formatters';
-import SectionTitle from './SectionTitle';
+import SectionTitle from '../../components/SectionTitle';
 
 // ── File-local tooltip rendered inside the chart ──────────────────────────────
 

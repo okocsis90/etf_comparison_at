@@ -9,7 +9,7 @@ import {
   Chip,
 } from '@mui/material';
 import { eur, pct, dateLabel } from '../../utils/formatters';
-import SectionTitle from './SectionTitle';
+import SectionTitle from '../../components/SectionTitle';
 
 /**
  * Per-report detail table. Rows above the average deemed/price ratio are

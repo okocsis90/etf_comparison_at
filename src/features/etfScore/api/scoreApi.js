@@ -1,5 +1,10 @@
 const BASE_URL = '/api';
 
+/**
+ * Fetches the full tax-efficiency score for an ETF by ISIN.
+ * @param {string} isin
+ * @returns {Promise<import('../../../api/scoreApi').ScoreResult>}
+ */
 export async function fetchScore(isin) {
   const response = await fetch(`${BASE_URL}/score?isin=${encodeURIComponent(isin)}`);
   if (!response.ok) {

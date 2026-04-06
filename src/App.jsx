@@ -1,6 +1,6 @@
 import { Box, Container, Typography, AppBar, Toolbar } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import EtfScoreSearch from './features/etfScore/EtfScoreSearch';
+import { EtfScoreSearch } from './features/etfScore';
 export default function App() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
