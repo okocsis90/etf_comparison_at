@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -12,7 +13,12 @@ import {
   Paper,
   Chip,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -72,7 +78,224 @@ function SectionTitle({ children }) {
   );
 }
 
-// ── Tax Efficiency Grade ──────────────────────────────────────────────────────
+// ── Score Breakdown Dialog ────────────────────────────────────────────────────
+
+function ScoreBar({ score }) {
+  return (
+    <Box sx={{ height: 8, bgcolor: 'grey.200', borderRadius: 1, overflow: 'hidden', mt: 0.5, mb: 1 }}>
+      <Box
+        sx={{
+          height: '100%',
+          width: `${score}%`,
+          bgcolor: scoreToColor(score),
+          borderRadius: 1,
+          transition: 'width 0.6s ease',
+        }}
+      />
+    </Box>
+  );
+}
+
+function ComponentBlock({ title, weight, score, children }) {
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.25 }}>
+        <Typography variant="subtitle2" fontWeight={700}>
+          {title}
+          <Typography component="span" variant="caption" color="text.secondary" ml={1}>
+            ({Math.round(weight * 100)} % of total score)
+          </Typography>
+        </Typography>
+        <Typography variant="subtitle2" fontWeight={700} color={scoreToColor(score ?? 0)}>
+          {score ?? 'N/A'} / 100
+        </Typography>
+      </Box>
+      <ScoreBar score={score ?? 0} />
+      {children}
+    </Box>
+  );
+}
+
+function ScoreBreakdownDialog({ open, onClose, grade, score, breakdown }) {
+  if (!breakdown) return null;
+  const { taxBurden, consistency, deemedToGains } = breakdown;
+
+  const gradeRows = [
+    { grade: 'A', min: 80, label: 'Excellent' },
+    { grade: 'B', min: 60, label: 'Good' },
+    { grade: 'C', min: 40, label: 'Moderate' },
+    { grade: 'D', min: 20, label: 'Poor' },
+    { grade: 'E', min: 0,  label: 'High Tax Drag' },
+  ];
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
+      <DialogTitle sx={{ pr: 6 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              bgcolor: GRADE_COLORS[grade],
+              color: 'white',
+              borderRadius: 1.5,
+              px: 1.5,
+              py: 0.25,
+              fontWeight: 900,
+              fontSize: '1.4rem',
+              lineHeight: 1.3,
+            }}
+          >
+            {grade}
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+              Tax Efficiency Score: {score} / 100
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              How your ETF is rated for Austrian tax purposes
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ position: 'absolute', right: 12, top: 12 }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        {/* Why this score */}
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          In Austria, accumulating ETFs ("Meldefonds") require you to pay KESt (27.5 %) on
+          deemed income (<em>ausschüttungsgleiche Erträge</em>) every year — even if you never
+          sell. This score measures how much of a tax drag that creates and how predictably you
+          can plan for it. <strong>Higher is better.</strong>
+        </Typography>
+
+        <Divider sx={{ mb: 3 }} />
+
+        {/* Component 1 */}
+        <ComponentBlock title="Tax Burden" weight={taxBurden.weight} score={taxBurden.score}>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Your value: avg deemed income / ETF price =&nbsp;
+            <strong>{taxBurden.avgDeemedToEtfPricePct.toFixed(3)} %</strong> per year
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            The annual deemed income as a percentage of your ETF price is the most direct
+            measure of yearly tax obligation. An ETF with 0.2 % deemed/price costs you
+            0.2 % × 27.5 % = ~0.055 % of your holding in KESt every year.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
+            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+            score = max(0, 100 × (1 − avg% / 2))
+          </Typography>
+        </ComponentBlock>
+
+        {/* Component 2 */}
+        <ComponentBlock title="Predictability (Consistency)" weight={consistency.weight} score={consistency.score}>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Coefficient of Variation (CV):&nbsp;
+            <strong>
+              {consistency.coefficientOfVariation !== null
+                ? consistency.coefficientOfVariation.toFixed(3)
+                : '— (fewer than 2 reports)'}
+            </strong>
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            CV = stddev / mean of the yearly deemed/price ratios. A low CV means the annual
+            tax burden is stable — you can reliably forecast your KeSt bill. A high CV means
+            one year might be ten times another, making tax planning very difficult.
+            Unlike the Max Swing metric, CV is scale-independent: a high-but-stable ETF
+            still scores well here.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
+            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+            score = max(0, 100 × (1 − CV / 1.5))
+            {consistency.coefficientOfVariation === null && '  [neutral 50 pts applied]'}
+          </Typography>
+        </ComponentBlock>
+
+        {/* Component 3 */}
+        <ComponentBlock
+          title="Deemed vs Total Gains"
+          weight={deemedToGains.weight}
+          score={deemedToGains.score ?? 0}
+        >
+          {deemedToGains.included ? (
+            <>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Deemed gains / total price gains =&nbsp;
+                <strong>{deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} %</strong>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                Of all the gains your ETF generated over the analysis period, this fraction
+                was taxed annually as deemed income rather than deferred to the point of sale.
+                Lower means more of your gains benefit from tax deferral.
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
+                sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+                score = max(0, 100 − deemedToTotalGains%)
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="caption" color="text.secondary" display="block"
+              sx={{ fontStyle: 'italic' }}>
+              Excluded from this calculation — total gains are non-positive or the ratio falls
+              outside the 0–200 % range. The 15 % weight was redistributed proportionally
+              between the other two components.
+            </Typography>
+          )}
+        </ComponentBlock>
+
+        <Divider sx={{ mb: 2 }} />
+
+        {/* Grade thresholds */}
+        <Typography variant="subtitle2" fontWeight={700} mb={1.5}>
+          Grade Thresholds
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {gradeRows.map(({ grade: g, min, label }) => (
+            <Box
+              key={g}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                border: `2px solid ${g === grade ? GRADE_COLORS[g] : 'transparent'}`,
+                bgcolor: g === grade ? `${GRADE_COLORS[g]}18` : 'grey.100',
+                borderRadius: 1.5,
+                px: 1.5,
+                py: 0.75,
+                minWidth: 110,
+              }}
+            >
+              <Box
+                sx={{
+                  bgcolor: GRADE_COLORS[g],
+                  color: 'white',
+                  borderRadius: 1,
+                  px: 0.75,
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  lineHeight: 1.4,
+                }}
+              >
+                {g}
+              </Box>
+              <Box>
+                <Typography variant="caption" fontWeight={700} display="block" lineHeight={1.2}>
+                  {label}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  score ≥ {min}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Tax Efficiency Grade Badge ────────────────────────────────────────────────
 
 const GRADE_COLORS = {
   A: '#2e7d32',
@@ -99,7 +322,7 @@ const scoreToColor = (score) => {
   return GRADE_COLORS.E;
 };
 
-function TaxGradeBadge({ grade, score, breakdown }) {
+function TaxGradeBadge({ grade, score, breakdown, onClick }) {
   const color = GRADE_COLORS[grade] ?? '#546e7a';
 
   const tooltipContent = (
@@ -138,12 +361,17 @@ function TaxGradeBadge({ grade, score, breakdown }) {
           <strong>Deemed / Gains</strong>: excluded (gains not positive or ratio out of range)
         </Typography>
       )}
+
+      <Typography variant="caption" display="block" mt={1} sx={{ opacity: 0.7, fontStyle: 'italic' }}>
+        Click for full methodology
+      </Typography>
     </Box>
   );
 
   return (
     <Tooltip title={tooltipContent} arrow placement="left">
       <Box
+        onClick={onClick}
         sx={{
           bgcolor: color,
           color: 'white',
@@ -151,10 +379,13 @@ function TaxGradeBadge({ grade, score, breakdown }) {
           px: 2.5,
           py: 1.5,
           textAlign: 'center',
-          cursor: 'help',
+          cursor: 'pointer',
           minWidth: 90,
           boxShadow: 3,
           userSelect: 'none',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          '&:hover': { transform: 'scale(1.04)', boxShadow: 6 },
+          '&:active': { transform: 'scale(0.98)' },
         }}
       >
         <Typography variant="h2" fontWeight={900} lineHeight={1} color="inherit">
@@ -174,6 +405,8 @@ function TaxGradeBadge({ grade, score, breakdown }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EtfScoreResult({ data }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const chartData = [...data.reportMetrics]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map((m) => ({
@@ -198,8 +431,17 @@ export default function EtfScoreResult({ data }) {
           grade={data.taxEfficiencyGrade}
           score={data.taxEfficiencyScore}
           breakdown={data.taxEfficiencyScoreBreakdown}
+          onClick={() => setDialogOpen(true)}
         />
       </Box>
+
+      <ScoreBreakdownDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        grade={data.taxEfficiencyGrade}
+        score={data.taxEfficiencyScore}
+        breakdown={data.taxEfficiencyScoreBreakdown}
+      />
 
       {/* ── Price Overview ─────────────────────────────────────────────────── */}
       <SectionTitle>Price Overview</SectionTitle>
