@@ -15,6 +15,7 @@ jest.unstable_mockModule('../../../shared/logger.js', () => ({
 
 // Mock YahooFinance
 const mockYahooFinance = {
+    _opts: {},
     search: jest.fn(),
     chart: jest.fn(),
     quote: jest.fn()
