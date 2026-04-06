@@ -1,429 +1,31 @@
 import { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Legend,
-} from 'recharts';
+import { Box, Grid, Divider, Typography, Chip } from '@mui/material';
+import { eur, pct, dateLabel } from '../../utils/formatters';
+import { scoreToColor } from './gradeConfig';
 import MetricCard from './MetricCard';
+import SectionTitle from './SectionTitle';
+import TaxGradeBadge from './TaxGradeBadge';
+import ScoreBreakdownDialog from './ScoreBreakdownDialog';
+import ReportChart from './ReportChart';
+import ReportTable from './ReportTable';
 
-// ── Formatters ────────────────────────────────────────────────────────────────
-
-const eur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
-
-const pct = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v / 100);
-
-const dateLabel = (d) =>
-  new Date(d).toLocaleDateString('de-AT', { year: 'numeric', month: '2-digit', day: '2-digit' });
-
-// ── Custom chart tooltip ──────────────────────────────────────────────────────
-
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <Paper elevation={4} sx={{ p: 1.5, minWidth: 200 }}>
-      <Typography variant="caption" fontWeight={700} display="block" mb={0.5}>
-        {label}
-      </Typography>
-      {payload.map((entry) => (
-        <Box key={entry.name} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-          <Typography variant="caption" color={entry.color}>
-            {entry.name}
-          </Typography>
-          <Typography variant="caption" fontWeight={600}>
-            {typeof entry.value === 'number' && entry.name.includes('%')
-              ? `${entry.value.toFixed(4)} %`
-              : eur(entry.value)}
-          </Typography>
-        </Box>
-      ))}
-    </Paper>
-  );
-}
-
-// ── Section heading ───────────────────────────────────────────────────────────
-
-function SectionTitle({ children }) {
-  return (
-    <Typography variant="overline" color="text.secondary" fontWeight={700} letterSpacing={1} display="block" mb={1.5}>
-      {children}
-    </Typography>
-  );
-}
-
-// ── Score Breakdown Dialog ────────────────────────────────────────────────────
-
-function ScoreBar({ score }) {
-  return (
-    <Box sx={{ height: 8, bgcolor: 'grey.200', borderRadius: 1, overflow: 'hidden', mt: 0.5, mb: 1 }}>
-      <Box
-        sx={{
-          height: '100%',
-          width: `${score}%`,
-          bgcolor: scoreToColor(score),
-          borderRadius: 1,
-          transition: 'width 0.6s ease',
-        }}
-      />
-    </Box>
-  );
-}
-
-function ComponentBlock({ title, weight, score, children }) {
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.25 }}>
-        <Typography variant="subtitle2" fontWeight={700}>
-          {title}
-          <Typography component="span" variant="caption" color="text.secondary" ml={1}>
-            ({Math.round(weight * 100)} % of total score)
-          </Typography>
-        </Typography>
-        <Typography variant="subtitle2" fontWeight={700} color={scoreToColor(score ?? 0)}>
-          {score ?? 'N/A'} / 100
-        </Typography>
-      </Box>
-      <ScoreBar score={score ?? 0} />
-      {children}
-    </Box>
-  );
-}
-
-function ScoreBreakdownDialog({ open, onClose, grade, score, breakdown }) {
-  if (!breakdown) return null;
-  const { taxBurden, consistency, deemedToGains } = breakdown;
-
-  const gradeRows = [
-    { grade: 'A', min: 80, label: 'Excellent' },
-    { grade: 'B', min: 60, label: 'Good' },
-    { grade: 'C', min: 40, label: 'Moderate' },
-    { grade: 'D', min: 20, label: 'Poor' },
-    { grade: 'E', min: 0,  label: 'High Tax Drag' },
-  ];
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
-      <DialogTitle sx={{ pr: 6 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              bgcolor: GRADE_COLORS[grade],
-              color: 'white',
-              borderRadius: 1.5,
-              px: 1.5,
-              py: 0.25,
-              fontWeight: 900,
-              fontSize: '1.4rem',
-              lineHeight: 1.3,
-            }}
-          >
-            {grade}
-          </Box>
-          <Box>
-            <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
-              Tax Efficiency Score: {score} / 100
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              How your ETF is rated for Austrian tax purposes
-            </Typography>
-          </Box>
-        </Box>
-        <IconButton onClick={onClose} size="small" sx={{ position: 'absolute', right: 12, top: 12 }}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        {/* Why this score */}
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          In Austria, accumulating ETFs ("Meldefonds") require you to pay KESt (27.5 %) on
-          deemed income (<em>ausschüttungsgleiche Erträge</em>) every year — even if you never
-          sell. This score measures how much of a tax drag that creates and how predictably you
-          can plan for it. <strong>Higher is better.</strong>
-        </Typography>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {/* Component 1 */}
-        <ComponentBlock title="Tax Burden" weight={taxBurden.weight} score={taxBurden.score}>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Your value: avg deemed income / ETF price =&nbsp;
-            <strong>{taxBurden.avgDeemedToEtfPricePct.toFixed(3)} %</strong> per year
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-            The annual deemed income as a percentage of your ETF price is the most direct
-            measure of yearly tax obligation. An ETF with 0.2 % deemed/price costs you
-            0.2 % × 27.5 % = ~0.055 % of your holding in KESt every year.
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
-            score = max(0, 100 × (1 − avg% / 2))
-          </Typography>
-        </ComponentBlock>
-
-        {/* Component 2 */}
-        <ComponentBlock title="Predictability (Consistency)" weight={consistency.weight} score={consistency.score}>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Coefficient of Variation (CV):&nbsp;
-            <strong>
-              {consistency.coefficientOfVariation !== null
-                ? consistency.coefficientOfVariation.toFixed(3)
-                : '— (fewer than 2 reports)'}
-            </strong>
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-            CV = stddev / mean of the yearly deemed/price ratios. A low CV means the annual
-            tax burden is stable — you can reliably forecast your KeSt bill. A high CV means
-            one year might be ten times another, making tax planning very difficult.
-            Unlike the Max Swing metric, CV is scale-independent: a high-but-stable ETF
-            still scores well here.
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
-            score = max(0, 100 × (1 − CV / 1.5))
-            {consistency.coefficientOfVariation === null && '  [neutral 50 pts applied]'}
-          </Typography>
-        </ComponentBlock>
-
-        {/* Component 3 */}
-        <ComponentBlock
-          title="Deemed vs Total Gains"
-          weight={deemedToGains.weight}
-          score={deemedToGains.score ?? 0}
-        >
-          {deemedToGains.included ? (
-            <>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Deemed gains / total price gains =&nbsp;
-                <strong>{deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} %</strong>
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-                Of all the gains your ETF generated over the analysis period, this fraction
-                was taxed annually as deemed income rather than deferred to the point of sale.
-                Lower means more of your gains benefit from tax deferral.
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-                sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
-                score = max(0, 100 − deemedToTotalGains%)
-              </Typography>
-            </>
-          ) : (
-            <Typography variant="caption" color="text.secondary" display="block"
-              sx={{ fontStyle: 'italic' }}>
-              Excluded from this calculation — total gains are non-positive or the ratio falls
-              outside the 0–200 % range. The 15 % weight was redistributed proportionally
-              between the other two components.
-            </Typography>
-          )}
-        </ComponentBlock>
-
-        <Divider sx={{ mb: 2 }} />
-
-        {/* Grade thresholds */}
-        <Typography variant="subtitle2" fontWeight={700} mb={1.5}>
-          Grade Thresholds
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {gradeRows.map(({ grade: g, min, label }) => (
-            <Box
-              key={g}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                border: `2px solid ${g === grade ? GRADE_COLORS[g] : 'transparent'}`,
-                bgcolor: g === grade ? `${GRADE_COLORS[g]}18` : 'grey.100',
-                borderRadius: 1.5,
-                px: 1.5,
-                py: 0.75,
-                minWidth: 110,
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: GRADE_COLORS[g],
-                  color: 'white',
-                  borderRadius: 1,
-                  px: 0.75,
-                  fontWeight: 900,
-                  fontSize: '1rem',
-                  lineHeight: 1.4,
-                }}
-              >
-                {g}
-              </Box>
-              <Box>
-                <Typography variant="caption" fontWeight={700} display="block" lineHeight={1.2}>
-                  {label}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  score ≥ {min}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ── Tax Efficiency Grade Badge ────────────────────────────────────────────────
-
-const GRADE_COLORS = {
-  A: '#2e7d32',
-  B: '#558b2f',
-  C: '#f57f17',
-  D: '#e65100',
-  E: '#c62828',
-};
-
-const GRADE_LABELS = {
-  A: 'Excellent',
-  B: 'Good',
-  C: 'Moderate',
-  D: 'Poor',
-  E: 'High Tax Drag',
-};
-
-/** Maps a 0-100 score to the same green→red scale used by the grade badge. */
-const scoreToColor = (score) => {
-  if (score >= 80) return GRADE_COLORS.A;
-  if (score >= 60) return GRADE_COLORS.B;
-  if (score >= 40) return GRADE_COLORS.C;
-  if (score >= 20) return GRADE_COLORS.D;
-  return GRADE_COLORS.E;
-};
-
-function TaxGradeBadge({ grade, score, breakdown, onClick }) {
-  const color = GRADE_COLORS[grade] ?? '#546e7a';
-
-  const tooltipContent = (
-    <Box sx={{ p: 0.5, maxWidth: 260 }}>
-      <Typography variant="caption" fontWeight={700} display="block" mb={1}>
-        Austrian Tax Efficiency — {score}/100
-      </Typography>
-
-      <Typography variant="caption" display="block">
-        <strong>Tax Burden</strong> ({Math.round(breakdown.taxBurden.weight * 100)} %):&nbsp;
-        {breakdown.taxBurden.score}/100
-        <br />
-        avg deemed/price: {breakdown.taxBurden.avgDeemedToEtfPricePct.toFixed(3)} %
-      </Typography>
-
-      <Typography variant="caption" display="block" mt={0.75}>
-        <strong>Consistency</strong> ({Math.round(breakdown.consistency.weight * 100)} %):&nbsp;
-        {breakdown.consistency.score}/100
-        {breakdown.consistency.coefficientOfVariation !== null && (
-          <> (CV: {breakdown.consistency.coefficientOfVariation.toFixed(3)})</>
-        )}
-        {breakdown.consistency.coefficientOfVariation === null && (
-          <> (insufficient data)</>
-        )}
-      </Typography>
-
-      {breakdown.deemedToGains.included ? (
-        <Typography variant="caption" display="block" mt={0.75}>
-          <strong>Deemed / Gains</strong> ({Math.round(breakdown.deemedToGains.weight * 100)} %):&nbsp;
-          {breakdown.deemedToGains.score}/100
-          <br />
-          {breakdown.deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} % of total gains taxed annually
-        </Typography>
-      ) : (
-        <Typography variant="caption" display="block" mt={0.75} sx={{ opacity: 0.7 }}>
-          <strong>Deemed / Gains</strong>: excluded (gains not positive or ratio out of range)
-        </Typography>
-      )}
-
-      <Typography variant="caption" display="block" mt={1} sx={{ opacity: 0.7, fontStyle: 'italic' }}>
-        Click for full methodology
-      </Typography>
-    </Box>
-  );
-
-  return (
-    <Tooltip title={tooltipContent} arrow placement="left">
-      <Box
-        onClick={onClick}
-        sx={{
-          bgcolor: color,
-          color: 'white',
-          borderRadius: 2,
-          px: 2.5,
-          py: 1.5,
-          textAlign: 'center',
-          cursor: 'pointer',
-          minWidth: 90,
-          boxShadow: 3,
-          userSelect: 'none',
-          transition: 'transform 0.15s, box-shadow 0.15s',
-          '&:hover': { transform: 'scale(1.04)', boxShadow: 6 },
-          '&:active': { transform: 'scale(0.98)' },
-        }}
-      >
-        <Typography variant="h2" fontWeight={900} lineHeight={1} color="inherit">
-          {grade}
-        </Typography>
-        <Typography variant="caption" fontWeight={700} color="inherit" display="block" mt={0.5} letterSpacing={0.5}>
-          TAX EFFICIENCY
-        </Typography>
-        <Typography variant="caption" color="inherit" sx={{ opacity: 0.85 }}>
-          {GRADE_LABELS[grade]}
-        </Typography>
-      </Box>
-    </Tooltip>
-  );
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
+/**
+ * Full result panel rendered after a successful score fetch.
+ * This component is intentionally kept as a thin layout orchestrator —
+ * all non-trivial logic and sub-sections live in their own files.
+ *
+ * @param {{ data: import('../../api/scoreApi').ScoreResult }} props
+ */
 export default function EtfScoreResult({ data }) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const chartData = [...data.reportMetrics]
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .map((m) => ({
-      date: dateLabel(m.date),
-      'Deemed Income': m.deemedIncomeEur,
-      'ETF Price': m.etfPriceOnDateEur,
-      'Deemed / Price %': m.deemedIncomeToEtfPricePercent,
-    }));
-
   return (
     <Box>
-      {/* Header */}
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h5" fontWeight={700}>
-            {data.isin}
-          </Typography>
+          <Typography variant="h5" fontWeight={700}>{data.isin}</Typography>
           <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
           <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
         </Box>
@@ -447,38 +49,23 @@ export default function EtfScoreResult({ data }) {
       <SectionTitle>Price Overview</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Current ETF Price"
-            value={eur(data.currentEtfPriceEur)}
-            color="#1976d2"
-            tooltip="Latest available ETF price converted to EUR"
-          />
+          <MetricCard title="Current ETF Price" value={eur(data.currentEtfPriceEur)} color="#1976d2"
+            tooltip="Latest available ETF price converted to EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Price at Period Start"
-            value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
-            subtitle={dateLabel(data.firstBusinessYearStart)}
-            color="#7b1fa2"
-            tooltip="ETF price at the start of the first business year, in EUR"
-          />
+          <MetricCard title="Price at Period Start" value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
+            subtitle={dateLabel(data.firstBusinessYearStart)} color="#7b1fa2"
+            tooltip="ETF price at the start of the first business year, in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Price at Period End"
-            value={eur(data.etfPriceAtLastBusinessYearEndEur)}
-            subtitle={dateLabel(data.lastBusinessYearEnd)}
-            color="#7b1fa2"
-            tooltip="ETF price at the end of the last business year, in EUR"
-          />
+          <MetricCard title="Price at Period End" value={eur(data.etfPriceAtLastBusinessYearEndEur)}
+            subtitle={dateLabel(data.lastBusinessYearEnd)} color="#7b1fa2"
+            tooltip="ETF price at the end of the last business year, in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Total Gains (Period)"
-            value={eur(data.totalGains)}
+          <MetricCard title="Total Gains (Period)" value={eur(data.totalGains)}
             color={data.totalGains >= 0 ? '#2e7d32' : '#c62828'}
-            tooltip="Price appreciation from first business year start to last business year end, in EUR"
-          />
+            tooltip="Price appreciation from first business year start to last business year end, in EUR" />
         </Grid>
       </Grid>
 
@@ -488,67 +75,39 @@ export default function EtfScoreResult({ data }) {
       <SectionTitle>Deemed Income (Ausschüttungsgleiche Erträge)</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Total Deemed Gains"
-            value={eur(data.deemedGains)}
-            color="#e65100"
-            tooltip="Sum of all deemed incomes across all reports, in EUR"
-          />
+          <MetricCard title="Total Deemed Gains" value={eur(data.deemedGains)} color="#e65100"
+            tooltip="Sum of all deemed incomes across all reports, in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Deemed / Total Gains"
-            value={pct(data.deemedGainsToTotalGainsPercent)}
-            color="#e65100"
-            tooltip="Deemed gains as a percentage of total price gains over the period"
-          />
+          <MetricCard title="Deemed / Total Gains" value={pct(data.deemedGainsToTotalGainsPercent)} color="#e65100"
+            tooltip="Deemed gains as a percentage of total price gains over the period" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Avg Deemed Income / Year"
-            value={eur(data.avgDeemedIncomeEur)}
-            color="#f57c00"
-            tooltip="Average deemed income per report year, in EUR"
-          />
+          <MetricCard title="Avg Deemed Income / Year" value={eur(data.avgDeemedIncomeEur)} color="#f57c00"
+            tooltip="Average deemed income per report year, in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Avg Deemed / Current Price"
-            value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)}
-            color="#f57c00"
-            tooltip="Average yearly deemed income as a % of the current ETF price — useful for comparing ongoing tax drag"
-          />
+          <MetricCard title="Avg Deemed / Current Price" value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
+            tooltip="Average yearly deemed income as a % of the current ETF price — useful for comparing ongoing tax drag" />
         </Grid>
       </Grid>
 
       <Divider sx={{ mb: 3 }} />
 
-      {/* ── Volatility / Consistency ───────────────────────────────────────── */}
+      {/* ── Consistency Metrics ────────────────────────────────────────────── */}
       <SectionTitle>Consistency Metrics</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Avg Deemed / ETF Price %"
-            value={pct(data.avgDeemedIncomeToEtfPricePercent)}
-            color="#00796b"
-            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax drag indicator"
-          />
+          <MetricCard title="Avg Deemed / ETF Price %" value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
+            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax drag indicator" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Max Deemed Income Diff"
-            value={eur(data.maxDeemedIncomeDiffEur)}
-            color="#d32f2f"
-            tooltip="Largest absolute difference in deemed income between any two years — shows worst-case year-to-year swing in EUR"
-          />
+          <MetricCard title="Max Deemed Income Diff" value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
+            tooltip="Largest absolute difference in deemed income between any two years — shows worst-case year-to-year swing in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title="Max Swing / Avg Price"
-            value={pct(data.maxDiffToAvgEtfPricePercent)}
-            color="#d32f2f"
-            tooltip="Max deemed income swing as a % of average ETF price — answers 'how large was the worst-case annual tax base jump relative to my holding value?'"
-          />
+          <MetricCard title="Max Swing / Avg Price" value={pct(data.maxDiffToAvgEtfPricePercent)} color="#d32f2f"
+            tooltip="Max deemed income swing as a % of average ETF price — answers 'how large was the worst-case annual tax base jump relative to my holding value?'" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
@@ -560,77 +119,19 @@ export default function EtfScoreResult({ data }) {
                 : 'Insufficient data (< 2 reports)'
             }
             color={scoreToColor(data.taxEfficiencyScoreBreakdown.consistency.score)}
-            tooltip="Measures how stable the annual deemed income is relative to its own average, using the Coefficient of Variation (CV = stddev / mean of yearly deemed/price ratios). Unlike the Max Swing card, this is scale-independent — a high-but-stable ETF still scores well here. Score 100 = perfectly consistent, 0 = chaotic."
-          />
+            tooltip="Measures how stable the annual deemed income is relative to its own average, using the Coefficient of Variation (CV = stddev / mean). Score 100 = perfectly consistent, 0 = chaotic." />
         </Grid>
       </Grid>
 
       <Divider sx={{ mb: 3 }} />
 
-      {/* ── Chart ──────────────────────────────────────────────────────────── */}
-      <SectionTitle>Yearly Report Metrics</SectionTitle>
-      <Paper elevation={1} sx={{ p: 2, mb: 4 }}>
-        <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis
-              yAxisId="eur"
-              orientation="left"
-              tickFormatter={(v) => `€${v.toFixed(0)}`}
-              tick={{ fontSize: 11 }}
-              width={72}
-            />
-            <YAxis
-              yAxisId="pct"
-              orientation="right"
-              tickFormatter={(v) => `${v.toFixed(2)}%`}
-              tick={{ fontSize: 11 }}
-              width={64}
-            />
-            <RechartsTooltip content={<ChartTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 13 }} />
-            <Bar yAxisId="eur" dataKey="Deemed Income" fill="#e65100" opacity={0.85} radius={[3, 3, 0, 0]} />
-            <Line yAxisId="eur" type="monotone" dataKey="ETF Price" stroke="#1976d2" strokeWidth={2} dot={{ r: 4 }} />
-            <Line yAxisId="pct" type="monotone" dataKey="Deemed / Price %" stroke="#2e7d32" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Paper>
+      {/* ── Chart & Table ──────────────────────────────────────────────────── */}
+      <ReportChart reportMetrics={data.reportMetrics} />
+      <ReportTable
+        reportMetrics={data.reportMetrics}
+        avgDeemedIncomeToEtfPricePercent={data.avgDeemedIncomeToEtfPricePercent}
+      />
 
-      {/* ── Per-report Table ───────────────────────────────────────────────── */}
-      <SectionTitle>Per-Report Detail</SectionTitle>
-      <TableContainer component={Paper} elevation={1}>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ '& th': { fontWeight: 700, backgroundColor: 'grey.100' } }}>
-              <TableCell>Report Date</TableCell>
-              <TableCell align="right">Deemed Income (EUR)</TableCell>
-              <TableCell align="right">ETF Price (EUR)</TableCell>
-              <TableCell align="right">Deemed / Price</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {[...data.reportMetrics]
-              .sort((a, b) => new Date(a.date) - new Date(b.date))
-              .map((m, i) => (
-                <TableRow key={i} hover sx={{ '&:last-child td': { border: 0 } }}>
-                  <TableCell>{dateLabel(m.date)}</TableCell>
-                  <TableCell align="right">{eur(m.deemedIncomeEur)}</TableCell>
-                  <TableCell align="right">{eur(m.etfPriceOnDateEur)}</TableCell>
-                  <TableCell align="right">
-                    <Chip
-                      label={pct(m.deemedIncomeToEtfPricePercent)}
-                      size="small"
-                      sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                      color={m.deemedIncomeToEtfPricePercent > data.avgDeemedIncomeToEtfPricePercent ? 'warning' : 'default'}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
     </Box>
   );
 }
-
