@@ -5,6 +5,7 @@ import { scoreToColor } from './gradeConfig';
 import MetricCard from '../../components/MetricCard';
 import SectionTitle from '../../components/SectionTitle';
 import TaxGradeBadge from './TaxGradeBadge';
+import ConfidenceBadge from './ConfidenceBadge';
 import ScoreBreakdownDialog from './ScoreBreakdownDialog';
 import ReportChart from './ReportChart';
 import ReportTable from './ReportTable';
