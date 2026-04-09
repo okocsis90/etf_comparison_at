@@ -25,10 +25,22 @@ export default function EtfScoreResult({ data }) {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h5" fontWeight={700}>{data.isin}</Typography>
-          <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
-          <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {data.name && (
+            <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+              {data.name}
+            </Typography>
+          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Typography variant="body2" fontFamily="monospace" color="text.secondary" fontWeight={600} letterSpacing={1}>
+              {data.isin}
+            </Typography>
+            {data.ticker && (
+              <Chip label={data.ticker} size="small" variant="outlined" color="secondary" />
+            )}
+            <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
+            <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch' }}>
           <ConfidenceBadge

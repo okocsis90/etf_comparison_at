@@ -1,6 +1,7 @@
 import logger from '../../../shared/logger.js';
 import YahooFinance from 'yahoo-finance2';
 import EtfPriceRepository from './etf-price.repository.js';
+import EtfInfoRepository from './etf-info.repository.js';
 
 /**
  * ETF price service.
@@ -36,8 +37,9 @@ class EtfPriceService {
             allowAdditionalProps: true,
         };
         this.repository = new EtfPriceRepository();
-        /** @type {Map<string, string>} in-memory ISIN → ticker cache */
-        this._tickerCache = new Map();
+        this.infoRepository = new EtfInfoRepository();
+        /** @type {Map<string, {ticker: string, name: string}>} in-memory ISIN → {ticker, name} cache */
+        this._etfInfoCache = new Map();
     }
 
     /**
@@ -130,25 +132,52 @@ class EtfPriceService {
     }
 
     /**
+     * Returns the resolved ticker and display name for an ISIN.
+     * Checks in-memory cache → SQLite → Yahoo Finance, in that order.
+     * @param {string} isin
+     * @returns {Promise<{ticker: string, name: string} | null>}
+     */
+    async getEtfInfo(isin) {
+        if (this._etfInfoCache.has(isin)) {
+            return this._etfInfoCache.get(isin);
+        }
+
+        const cached = this.infoRepository.find(isin);
+        if (cached) {
+            this._etfInfoCache.set(isin, cached);
+            return cached;
+        }
+
+        // Falls through to Yahoo Finance — also warms up the in-memory + DB caches.
+        return this._resolveEtfInfo(isin);
+    }
+
+    /**
      * Resolves an ISIN to a Yahoo Finance ticker symbol.
-     * Prefers EUR-denominated European exchanges (.DE, .AS, .PA, .MI).
-     * Results are cached in-memory for the lifetime of this instance.
+     * Checks in-memory cache first; delegates full resolution to _resolveEtfInfo.
      * @param {string} isin
      * @returns {Promise<string|null>} Ticker symbol or null if not found
      * @private
      */
     async _searchTickerByIsin(isin) {
-        if (this._tickerCache.has(isin)) {
-            return this._tickerCache.get(isin);
+        if (this._etfInfoCache.has(isin)) {
+            return this._etfInfoCache.get(isin).ticker;
         }
+        const info = await this._resolveEtfInfo(isin);
+        return info?.ticker ?? null;
+    }
 
+    /**
+     * Core Yahoo Finance lookup — resolves ticker + name and persists both caches.
+     * @param {string} isin
+     * @returns {Promise<{ticker: string, name: string} | null>}
+     * @private
+     */
+    async _resolveEtfInfo(isin) {
         let results = null;
         try {
             results = await this.yahooFinance.search(isin);
         } catch (error) {
-            // FailedYahooValidationError still carries a `result` property with the
-            // raw (partially-matching) data. Use it so a schema change doesn't make
-            // every ISIN lookup fail.
             if (error?.result?.quotes) {
                 logger.warn(`Yahoo schema validation warning for ISIN ${isin} – using partial result: ${error.message}`);
                 results = error.result;
@@ -166,10 +195,15 @@ class EtfPriceService {
             q.symbol.endsWith('.PA') ||
             q.symbol.endsWith('.MI')
         );
-        const ticker = euroQuote ? euroQuote.symbol : results.quotes[0].symbol;
+        const quote = euroQuote ?? results.quotes[0];
+        const ticker = quote.symbol;
+        const name = quote.longname ?? quote.shortname ?? ticker;
 
-        this._tickerCache.set(isin, ticker);
-        return ticker;
+        const info = { ticker, name };
+        this._etfInfoCache.set(isin, info);
+        this.infoRepository.save(isin, ticker, name);
+
+        return info;
     }
 
     /**

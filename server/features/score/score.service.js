@@ -50,9 +50,15 @@ class ScoreService {
       lastBusinessYearEnd
     });
 
-    // Step 4: Calculate and return score
+    // Step 4: Calculate score
     const scoreResult = this.scoreCalculatorService.calculateScore(scoreInput);
     logger.info(`Score calculation completed for ISIN: ${isin}`);
+
+    // Step 5: Attach ETF metadata (name + ticker) — looked up separately so the
+    // pure ScoreCalculatorService stays free of metadata concerns.
+    const etfInfo = await this.etfPriceService.getEtfInfo(isin);
+    scoreResult.ticker = etfInfo?.ticker ?? null;
+    scoreResult.name   = etfInfo?.name   ?? null;
 
     return scoreResult;
   }

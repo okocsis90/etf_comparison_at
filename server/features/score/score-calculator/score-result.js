@@ -54,6 +54,8 @@ class ReportMetric {
 class ScoreResult {
   constructor({
     isin,
+    ticker,
+    name,
     originalCurrency,
     totalGains,
     deemedGains,
@@ -77,6 +79,8 @@ class ScoreResult {
     confidenceLabel,
   }) {
     this.isin = isin;
+    this.ticker = ticker ?? null;
+    this.name = name ?? null;
     this.originalCurrency = originalCurrency;
     this.totalGains = totalGains;
     this.deemedGains = deemedGains;

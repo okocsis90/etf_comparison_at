@@ -63,6 +63,13 @@ function _migrate(database) {
             fetched_at                    TEXT NOT NULL,
             PRIMARY KEY (currency, request_date)
         );
+
+        CREATE TABLE IF NOT EXISTS etf_info (
+            isin       TEXT PRIMARY KEY,
+            ticker     TEXT NOT NULL,
+            name       TEXT NOT NULL,
+            fetched_at TEXT NOT NULL
+        );
     `);
 }
 

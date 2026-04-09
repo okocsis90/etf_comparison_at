@@ -23,10 +23,12 @@ jest.unstable_mockModule('./currency-exchange-rate/currency-exchange-rate.servic
 
 const mockGetPrice = jest.fn();
 const mockGetCurrentPrice = jest.fn();
+const mockGetEtfInfo = jest.fn().mockResolvedValue({ ticker: 'VUSA.AS', name: 'Vanguard S&P 500 UCITS ETF' });
 jest.unstable_mockModule('./etf-price/etf-price.service.js', () => ({
     default: jest.fn().mockImplementation(() => ({
         getPrice: mockGetPrice,
         getCurrentPrice: mockGetCurrentPrice,
+        getEtfInfo: mockGetEtfInfo,
     })),
 }));
 
@@ -99,7 +101,9 @@ describe('ScoreService', () => {
 
             const result = await service.getScore(ISIN);
 
-            expect(result).toEqual({ isin: ISIN, totalGains: 10 });
+            expect(result).toEqual(expect.objectContaining({ isin: ISIN, totalGains: 10 }));
+            expect(result.ticker).toBe('VUSA.AS');
+            expect(result.name).toBe('Vanguard S&P 500 UCITS ETF');
             expect(mockCalculateScore).toHaveBeenCalledTimes(1);
         });
 

@@ -167,11 +167,21 @@ export default function ComparisonTable({ results }) {
               <TableCell
                 key={d.isin}
                 align="center"
-                sx={{ fontWeight: 700, bgcolor: 'grey.100', minWidth: 150 }}
+                sx={{ fontWeight: 700, bgcolor: 'grey.100', minWidth: 160 }}
               >
-                <Typography variant="caption" fontWeight={800} fontFamily="monospace" letterSpacing={1}>
+                {d.name && (
+                  <Typography variant="caption" display="block" fontWeight={700} lineHeight={1.3} mb={0.25}>
+                    {d.name}
+                  </Typography>
+                )}
+                <Typography variant="caption" fontWeight={600} fontFamily="monospace" letterSpacing={1} color="text.secondary">
                   {d.isin}
                 </Typography>
+                {d.ticker && (
+                  <Typography variant="caption" display="block" color="secondary.main" fontWeight={600} mt={0.25}>
+                    {d.ticker}
+                  </Typography>
+                )}
               </TableCell>
             ))}
           </TableRow>

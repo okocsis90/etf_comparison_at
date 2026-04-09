@@ -25,11 +25,19 @@ function EtfSummaryCard({ data }) {
         gap: 1,
       }}
     >
-      {/* ISIN */}
-      <Typography variant="caption" fontFamily="monospace" fontWeight={800} letterSpacing={1.5}>
+      {/* ISIN + name */}
+      {data.name && (
+        <Typography variant="body2" fontWeight={700} lineHeight={1.3} mb={0.25}>
+          {data.name}
+        </Typography>
+      )}
+      <Typography variant="caption" fontFamily="monospace" fontWeight={600} letterSpacing={1.5} color="text.secondary">
         {data.isin}
       </Typography>
-      <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
+      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: 'center', mb: 0.5 }}>
+        {data.ticker && <Chip label={data.ticker} size="small" variant="outlined" color="secondary" />}
+        <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
+      </Box>
 
       {/* Grade badge */}
       <Box
