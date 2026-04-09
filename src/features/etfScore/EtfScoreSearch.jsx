@@ -10,7 +10,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { isValidIsin } from '../../utils/isinValidator';
 import { fetchScore } from './api/scoreApi';
-import EtfScoreResult from './EtfScoreResult';
+import EtfScoreResult from './components/EtfScoreResult';
 
 export default function EtfScoreSearch() {
   const [input, setInput] = useState('');

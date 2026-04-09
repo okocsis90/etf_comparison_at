@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Box, Grid, Divider, Typography, Chip } from '@mui/material';
-import { eur, pct, dateLabel } from '../../utils/formatters';
-import { scoreToColor } from './gradeConfig';
-import MetricCard from '../../components/MetricCard';
-import SectionTitle from '../../components/SectionTitle';
+import { eur, pct, dateLabel } from '../../../utils/formatters';
+import { scoreToColor } from '../config/gradeConfig';
+import MetricCard from '../../../components/MetricCard';
+import SectionTitle from '../../../components/SectionTitle';
 import TaxGradeBadge from './TaxGradeBadge';
 import ConfidenceBadge from './ConfidenceBadge';
 import ScoreBreakdownDialog from './ScoreBreakdownDialog';
@@ -15,7 +15,7 @@ import ReportTable from './ReportTable';
  * This component is intentionally kept as a thin layout orchestrator —
  * all non-trivial logic and sub-sections live in their own files.
  *
- * @param {{ data: import('../../api/scoreApi').ScoreResult }} props
+ * @param {{ data: import('../api/scoreApi').ScoreResult }} props
  */
 export default function EtfScoreResult({ data }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -143,3 +143,4 @@ export default function EtfScoreResult({ data }) {
     </Box>
   );
 }
+

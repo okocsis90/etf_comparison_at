@@ -1,6 +1,6 @@
 import { Box, Typography, Divider, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { GRADE_COLORS, GRADE_ROWS, scoreToColor } from './gradeConfig';
+import { GRADE_COLORS, GRADE_ROWS, scoreToColor } from '../config/gradeConfig';
 
 // ── File-local sub-components ─────────────────────────────────────────────────
 // ScoreBar and ComponentBlock are only used inside this dialog, so they live

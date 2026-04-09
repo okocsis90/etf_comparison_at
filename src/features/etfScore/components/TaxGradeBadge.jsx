@@ -1,5 +1,5 @@
 import { Box, Typography, Tooltip } from '@mui/material';
-import { GRADE_COLORS, GRADE_LABELS } from './gradeConfig';
+import { GRADE_COLORS, GRADE_LABELS } from '../config/gradeConfig';
 
 /**
  * Coloured grade badge shown in the top-right corner of the result panel.

@@ -8,15 +8,15 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
-import { eur, pct, dateLabel } from '../../utils/formatters';
-import SectionTitle from '../../components/SectionTitle';
+import { eur, pct, dateLabel } from '../../../utils/formatters';
+import SectionTitle from '../../../components/SectionTitle';
 
 /**
  * Per-report detail table. Rows above the average deemed/price ratio are
  * highlighted in amber so outlier years stand out immediately.
  *
  * @param {{
- *   reportMetrics: import('../../api/scoreApi').ReportMetric[],
+ *   reportMetrics: import('../api/scoreApi').ReportMetric[],
  *   avgDeemedIncomeToEtfPricePercent: number,
  * }} props
  */

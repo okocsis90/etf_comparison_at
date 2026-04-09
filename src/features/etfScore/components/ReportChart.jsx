@@ -10,8 +10,8 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from 'recharts';
-import { eur, dateLabel } from '../../utils/formatters';
-import SectionTitle from '../../components/SectionTitle';
+import { eur, dateLabel } from '../../../utils/formatters';
+import SectionTitle from '../../../components/SectionTitle';
 
 // ── File-local tooltip rendered inside the chart ──────────────────────────────
 
@@ -42,7 +42,7 @@ function ChartTooltip({ active, payload, label }) {
  * Bar + line composed chart of yearly deemed income, ETF price, and the
  * deemed/price percentage for each report date.
  *
- * @param {{ reportMetrics: import('../../api/scoreApi').ReportMetric[] }} props
+ * @param {{ reportMetrics: import('../api/scoreApi').ReportMetric[] }} props
  */
 export default function ReportChart({ reportMetrics }) {
   const chartData = [...reportMetrics]
