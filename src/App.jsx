@@ -66,7 +66,13 @@ export default function App() {
             {current.description}
           </Typography>
         </Box>
-        {current.component}
+
+        {/* All tab panels stay mounted so their state survives tab switches. */}
+        {TABS.map((tab, i) => (
+          <Box key={i} sx={{ display: activeTab === i ? 'block' : 'none' }}>
+            {tab.component}
+          </Box>
+        ))}
       </Container>
 
     </Box>
