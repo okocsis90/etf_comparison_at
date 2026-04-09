@@ -7,10 +7,12 @@ import {
   InputAdornment,
   CircularProgress,
   Typography,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { isValidIsin } from '../../utils/isinValidator';
 import { fetchScore } from './api/comparisonApi';
 import EtfComparisonResult from './components/EtfComparisonResult';
@@ -22,27 +24,37 @@ export default function EtfComparisonSearch() {
   const [inputs, setInputs] = useState(['', '']);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  // isDirty: inputs have changed since the last comparison was run
+  const [isDirty, setIsDirty] = useState(false);
 
   const validCount = inputs.filter((v) => isValidIsin(v.trim().toUpperCase())).length;
-  const canCompare = validCount >= MIN_ETFS && !loading;
+  const canSubmit = validCount >= MIN_ETFS && !loading;
+  const isRecalculate = results !== null && isDirty;
+
+  const markDirty = () => { if (results) setIsDirty(true); };
 
   const handleChange = (index, value) => {
     setInputs((prev) => prev.map((v, i) => (i === index ? value.toUpperCase() : v)));
+    markDirty();
   };
 
   const handleAdd = () => {
-    if (inputs.length < MAX_ETFS) setInputs((prev) => [...prev, '']);
+    if (inputs.length < MAX_ETFS) {
+      setInputs((prev) => [...prev, '']);
+      markDirty();
+    }
   };
 
   const handleRemove = (index) => {
+    // Results are intentionally kept — they update only on an explicit compare/recalculate.
     setInputs((prev) => prev.filter((_, i) => i !== index));
-    setResults(null);
+    markDirty();
   };
 
   const handleCompare = async () => {
     const isins = inputs.map((v) => v.trim().toUpperCase()).filter(isValidIsin);
     setLoading(true);
-    setResults(null);
+    setIsDirty(false);
     const settled = await Promise.allSettled(isins.map((isin) => fetchScore(isin)));
     setResults(
       settled.map((r, i) => ({
@@ -106,12 +118,21 @@ export default function EtfComparisonSearch() {
           variant="contained"
           size="large"
           onClick={handleCompare}
-          disabled={!canCompare}
+          disabled={!canSubmit}
+          startIcon={isRecalculate && !loading ? <RefreshIcon /> : null}
+          color={isRecalculate ? 'warning' : 'primary'}
           sx={{ px: 4 }}
         >
-          {loading ? <CircularProgress size={22} color="inherit" /> : 'Compare'}
+          {loading ? <CircularProgress size={22} color="inherit" /> : isRecalculate ? 'Recalculate' : 'Compare'}
         </Button>
       </Box>
+
+      {/* ── Stale results notice ────────────────────────────────────────────── */}
+      {isDirty && results && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Your inputs have changed. Click <strong>Recalculate</strong> to update the comparison.
+        </Alert>
+      )}
 
       {/* ── Results ────────────────────────────────────────────────────────── */}
       {results && !loading && <EtfComparisonResult results={results} />}
