@@ -104,7 +104,7 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
         <Typography variant="body2" color="text.secondary" mb={3}>
           In Austria, accumulating ETFs ("Meldefonds") require you to pay KESt (27.5 %) on
           deemed income (<em>ausschüttungsgleiche Erträge</em>) every year — even if you never
-          sell. This score measures how much of a tax drag that creates and how predictably you
+          sell. This score measures the size of that annual tax burden and how predictably you
           can plan for it. <strong>Higher is better.</strong>
         </Typography>
 
@@ -118,12 +118,16 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
             The annual deemed income as a percentage of your ETF price is the most direct measure
-            of yearly tax obligation. An ETF with 0.2 % deemed/price costs you
-            0.2 % × 27.5 % = ~0.055 % of your holding in KESt every year.
+            of yearly tax obligation. For example, an ETF with 0.2 % deemed/price implies an annual
+            KESt cost of 0.2 % × 27.5 % ≈ 0.055 % of your holding value each year.
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
             sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
             score = max(0, 100 × (1 − avg% / 2))
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            In plain terms: we map the average annual deemed % to a 0–100 score by treating 0 % → 100
+            and 2 % → 0 (linear scaling). Example: avg% = 0.5 % → score ≈ 100 × (1 − 0.5 / 2) = 75.
           </Typography>
         </ComponentBlock>
 
@@ -138,15 +142,20 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
             </strong>
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-            CV = stddev / mean of the yearly deemed/price ratios. A low CV means the annual tax
-            burden is stable — you can reliably forecast your KeSt bill. A high CV means one year
-            might be ten times another, making tax planning very difficult. Unlike the Max Swing
-            metric, CV is scale-independent: a high-but-stable ETF still scores well here.
+            CV = standard deviation ÷ mean of the yearly deemed/price ratios. A low CV means the
+            annual deemed income is stable (easy to forecast). A high CV means the yearly values
+            vary a lot relative to their average, which makes planning difficult. Unlike the Max
+            Swing metric, CV is scale-independent: an ETF can have high levels of deemed income
+            but still be predictable if the CV is small.
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
             sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
             score = max(0, 100 × (1 − CV / 1.5))
             {consistency.coefficientOfVariation === null && '  [neutral 50 pts applied]'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            Example: CV = 0.3 → score ≈ 100 × (1 − 0.3 / 1.5) ≈ 80. The divisor 1.5 scales typical CV
+            values into the 0–100 range used for the score.
           </Typography>
         </ComponentBlock>
 
@@ -163,13 +172,18 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
                 <strong>{deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} %</strong>
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-                Of all the gains your ETF generated over the analysis period, this fraction was
-                taxed annually as deemed income rather than deferred to the point of sale.
-                Lower means more of your gains benefit from tax deferral.
+                Of all the gains your ETF produced over the analysis period, this fraction was
+                taxed annually as deemed income instead of being taxed when you sell. A lower
+                fraction means more gains are tax-deferred until sale.
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
                 sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
                 score = max(0, 100 − deemedToTotalGains%)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                Example: if deemed gains = 10 % of total gains → score = 100 − 10 = 90. If the
+                ratio is missing or outside 0–200 %, the component is excluded and its weight is
+                redistributed to the other components.
               </Typography>
             </>
           ) : (

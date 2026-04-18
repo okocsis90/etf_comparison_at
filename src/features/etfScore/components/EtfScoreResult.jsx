@@ -75,17 +75,17 @@ export default function EtfScoreResult({ data }) {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Price at Period Start" value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
             subtitle={dateLabel(data.firstBusinessYearStart)} color="#7b1fa2"
-            tooltip="ETF price at the start of the first business year, in EUR" />
+            tooltip="ETF price at the start of the first business year (Geschäftsjahr Beginn as reported in the OeKB fund tax report), in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Price at Period End" value={eur(data.etfPriceAtLastBusinessYearEndEur)}
             subtitle={dateLabel(data.lastBusinessYearEnd)} color="#7b1fa2"
-            tooltip="ETF price at the end of the last business year, in EUR" />
+            tooltip="ETF price at the end of the last business year (Geschäftsjahr Ende as reported in the OeKB fund tax report), in EUR" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Total Gains (Period)" value={eur(data.totalGains)}
             color={data.totalGains >= 0 ? '#2e7d32' : '#c62828'}
-            tooltip="Price appreciation from first business year start to last business year end, in EUR" />
+            tooltip="Price appreciation over the analysis period in EUR. Dates come from the OeKB fund tax reports (business year = Geschäftsjahr start/end reported by OeKB)." />
         </Grid>
       </Grid>
 
@@ -108,7 +108,7 @@ export default function EtfScoreResult({ data }) {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Avg Deemed / Current Price" value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
-            tooltip="Average yearly deemed income as a % of the current ETF price — useful for comparing ongoing tax drag" />
+            tooltip="Average yearly deemed income as a percentage of the current ETF price — useful for comparing the ongoing annual tax burden between ETFs (shows the yearly tax cost relative to your current holding value)." />
         </Grid>
       </Grid>
 
@@ -119,7 +119,7 @@ export default function EtfScoreResult({ data }) {
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Avg Deemed / ETF Price %" value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
-            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax drag indicator" />
+            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax burden indicator (shows typical yearly deemed income relative to ETF value)." />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title="Max Deemed Income Diff" value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
@@ -139,7 +139,7 @@ export default function EtfScoreResult({ data }) {
                 : 'Insufficient data (< 2 reports)'
             }
             color={scoreToColor(data.taxEfficiencyScoreBreakdown.consistency.score)}
-            tooltip="Measures how stable the annual deemed income is relative to its own average, using the Coefficient of Variation (CV = stddev / mean). Score 100 = perfectly consistent, 0 = chaotic." />
+            tooltip="Measures how stable the annual deemed income is relative to its average. We compute the Coefficient of Variation (CV = stddev / mean) of the yearly deemed/price ratios, invert and scale it to 0–100 so that 100 = perfectly predictable and 0 = highly variable." />
         </Grid>
       </Grid>
 

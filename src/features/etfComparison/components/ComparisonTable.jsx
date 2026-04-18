@@ -25,27 +25,27 @@ const SECTIONS = [
   {
     title: 'Tax Efficiency',
     metrics: [
-      {
-        label: 'Overall Score',
-        get: (d) => d.taxEfficiencyScore,
-        format: (v) => `${v} / 100`,
-        higherIsBetter: true,
-        tooltip: 'Composite tax efficiency score (0–100). Combines tax burden, predictability, and deemed/gains ratio. Higher is better.',
-      },
-      {
-        label: 'Avg Deemed / ETF Price %',
-        get: (d) => d.avgDeemedIncomeToEtfPricePercent,
-        format: pct,
-        lowerIsBetter: true,
-        tooltip: 'Average annual deemed income as % of ETF price — the primary annual tax drag indicator. Lower is better.',
-      },
-      {
-        label: 'Predictability Score',
-        get: (d) => d.taxEfficiencyScoreBreakdown.consistency.score,
-        format: (v) => `${v} / 100`,
-        higherIsBetter: true,
-        tooltip: 'How stable the annual deemed income is year-over-year (based on Coefficient of Variation). Higher is better.',
-      },
+        {
+          label: 'Overall Score',
+          get: (d) => d.taxEfficiencyScore,
+          format: (v) => `${v} / 100`,
+          higherIsBetter: true,
+          tooltip: 'Composite tax efficiency score (0–100). Combines tax burden, predictability, and the share of deemed vs total gains. Higher is better.',
+        },
+        {
+          label: 'Avg Deemed / ETF Price %',
+          get: (d) => d.avgDeemedIncomeToEtfPricePercent,
+          format: pct,
+          lowerIsBetter: true,
+          tooltip: 'Average annual deemed income as a percentage of the ETF price — the primary annual tax burden indicator. Shows the typical yearly deemed income relative to ETF value; lower values mean a smaller annual tax cost.',
+        },
+        {
+          label: 'Predictability Score',
+          get: (d) => d.taxEfficiencyScoreBreakdown.consistency.score,
+          format: (v) => `${v} / 100`,
+          higherIsBetter: true,
+          tooltip: 'How predictable the annual deemed income is. Computed from the Coefficient of Variation (CV = stddev / mean) of yearly deemed/price ratios; the CV is inverted and scaled to 0–100 so that higher = more predictable.',
+        },
     ],
   },
   {
@@ -57,13 +57,13 @@ const SECTIONS = [
         format: eur,
         tooltip: 'Latest available ETF price in EUR.',
       },
-      {
-        label: 'Total Gains (Period)',
-        get: (d) => d.totalGains,
-        format: eur,
-        higherIsBetter: true,
-        tooltip: 'Price appreciation from first to last business year end, in EUR.',
-      },
+        {
+          label: 'Total Gains (Period)',
+          get: (d) => d.totalGains,
+          format: eur,
+          higherIsBetter: true,
+          tooltip: 'Price appreciation over the analysis period in EUR. Dates are taken from the OeKB fund tax reports (business year = "Geschäftsjahr" start/end reported by OeKB).',
+        },
     ],
   },
   {
@@ -90,13 +90,13 @@ const SECTIONS = [
         lowerIsBetter: true,
         tooltip: 'Average deemed income per report year, in EUR.',
       },
-      {
-        label: 'Avg Deemed / Current Price',
-        get: (d) => d.avgDeemedIncomeToCurrentEtfPricePercent,
-        format: pct,
-        lowerIsBetter: true,
-        tooltip: 'Average yearly deemed income as % of the current ETF price — useful for ongoing tax drag comparisons.',
-      },
+        {
+          label: 'Avg Deemed / Current Price',
+          get: (d) => d.avgDeemedIncomeToCurrentEtfPricePercent,
+          format: pct,
+          lowerIsBetter: true,
+          tooltip: 'Average yearly deemed income as a percentage of the current ETF price — useful for comparing the ongoing annual tax burden between ETFs (shows the yearly tax cost relative to your current holding value).',
+        },
     ],
   },
   {
@@ -109,13 +109,13 @@ const SECTIONS = [
         lowerIsBetter: true,
         tooltip: 'Worst-case year-to-year swing in deemed income as % of average ETF price.',
       },
-      {
-        label: 'Coefficient of Variation',
-        get: (d) => d.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation,
-        format: (v) => (v !== null ? v.toFixed(3) : '—'),
-        lowerIsBetter: true,
-        tooltip: 'CV = stddev / mean of yearly deemed/price ratios. Lower = more predictable annual tax base.',
-      },
+        {
+          label: 'Coefficient of Variation',
+          get: (d) => d.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation,
+          format: (v) => (v !== null ? v.toFixed(3) : '—'),
+          lowerIsBetter: true,
+          tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed/price ratios. A lower CV means the annual deemed income is more stable (more predictable).',
+        },
       {
         label: 'Reports Available',
         get: (d) => d.totalReports,
