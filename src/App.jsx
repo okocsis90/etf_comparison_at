@@ -7,6 +7,7 @@ import { EtfScoreSearch } from './features/etfScore';
 import { EtfComparisonSearch } from './features/etfComparison';
 import { LanguageProvider, useTranslation } from './i18n/LanguageProvider';
 import LanguageSelector from './components/LanguageSelector';
+import BrandLogo from './components/BrandLogo';
 
 function TabsDef() {
   const { t } = useTranslation();
@@ -46,13 +47,25 @@ function AppInner() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
 
       {/* ── App bar ──────────────────────────────────────────────────────── */}
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
-        <Toolbar>
-          <BarChartIcon sx={{ mr: 1.5 }} />
-          <Typography variant="h6" fontWeight={700} letterSpacing={0.5}>
-            {t('appTitle')}
-          </Typography>
-          <LanguageSelector />
+      <AppBar
+        position="static"
+        elevation={4}
+        sx={{
+          bgcolor: 'transparent',
+          backgroundImage: 'linear-gradient(90deg, #0d47a1 0%, #1565c0 60%)',
+        }}
+      >
+        <Toolbar sx={{ alignItems: 'center' }}>
+          <BrandLogo size={36} />
+          <Box sx={{ ml: 1 }}>
+            <Typography variant="h6" fontWeight={800} letterSpacing={0.5} color="common.white">
+              {t('appTitle')}
+            </Typography>
+          </Box>
+
+          <Box sx={{ ml: 'auto' }}>
+            <LanguageSelector />
+          </Box>
         </Toolbar>
       </AppBar>
 
