@@ -674,19 +674,19 @@ describe('ScoreCalculatorService', () => {
     // --- _coefficientOfVariation ---
 
     describe('_coefficientOfVariation', () => {
-        test('should return 0 for an empty array', () => {
-            expect(service._coefficientOfVariation([])).toBe(0);
+        test('should return NaN for an empty array', () => {
+            expect(service._coefficientOfVariation([])).toBeNaN();
         });
 
-        test('should return 0 for a single value', () => {
-            expect(service._coefficientOfVariation([5])).toBe(0);
+        test('should return NaN for a single value', () => {
+            expect(service._coefficientOfVariation([5])).toBeNaN();
         });
 
-        test('should return 0 when all values are identical', () => {
+        test('should return 0 when all values are identical (non-zero mean)', () => {
             expect(service._coefficientOfVariation([3, 3, 3])).toBe(0);
         });
 
-        test('should return 0 when the mean is zero', () => {
+        test('should treat all-zero series as perfectly stable (CV = 0)', () => {
             expect(service._coefficientOfVariation([0, 0, 0])).toBe(0);
         });
 

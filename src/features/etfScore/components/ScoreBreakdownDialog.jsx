@@ -138,20 +138,23 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
             <strong>
               {consistency.coefficientOfVariation !== null
                 ? consistency.coefficientOfVariation.toFixed(3)
-                : '— (fewer than 2 reports)'}
+                : '— (insufficient data or mean too small)'}
             </strong>
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
             CV = standard deviation ÷ mean of the yearly deemed/price ratios. A low CV means the
             annual deemed income is stable (easy to forecast). A high CV means the yearly values
             vary a lot relative to their average, which makes planning difficult. Unlike the Max
             Swing metric, CV is scale-independent: an ETF can have high levels of deemed income
             but still be predictable if the CV is small.
+            Note: the CV is undefined when the mean is effectively zero (tiny compared to the
+            data) or when there are fewer than two reports; in such cases we apply a neutral
+            predictability value and show the raw CV as unavailable.
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
+              sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
             score = max(0, 100 × (1 − CV / 1.5))
-            {consistency.coefficientOfVariation === null && '  [neutral 50 pts applied]'}
+            {consistency.coefficientOfVariation === null && '  [neutral 50 pts applied — CV undefined]'}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
             Example: CV = 0.3 → score ≈ 100 × (1 − 0.3 / 1.5) ≈ 80. The divisor 1.5 scales typical CV

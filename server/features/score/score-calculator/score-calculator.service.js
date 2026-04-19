@@ -155,10 +155,17 @@ class ScoreCalculatorService {
 
     // ── Component 2: Year-over-Year Consistency ──────────────────────────────
     const rates = reportMetrics.map(m => m.deemedIncomeToEtfPricePercent);
-    const cv = this._coefficientOfVariation(rates);
-    const consistencyScore = reportMetrics.length < 2
+    // Compute CV but treat near-zero mean as undefined (NaN) to avoid
+    // misinterpreting tiny denominators as "perfect stability" or
+    // producing extreme penalties. We also cap extremely large CVs for
+    // scoring stability while still reporting the raw CV for diagnostics.
+    const cvRaw = this._coefficientOfVariation(rates);
+    const cvValid = Number.isFinite(cvRaw) && cvRaw >= 0;
+    const CV_CAP = 3.0; // cap used for mapping to score (tunable)
+    const cvForScoring = cvValid ? Math.min(cvRaw, CV_CAP) : null;
+    const consistencyScore = reportMetrics.length < 2 || !cvValid
       ? 50
-      : Math.max(0, 100 * (1 - cv / 1.5));
+      : Math.max(0, 100 * (1 - cvForScoring / 1.5));
 
     // ── Component 3: Deemed vs Total Gains ──────────────────────────────────
     const gainsRatioUsable = totalGains > 0
@@ -203,7 +210,10 @@ class ScoreCalculatorService {
         consistency: {
           score: round1(consistencyScore),
           weight: effectiveWeights.consistency,
-          coefficientOfVariation: reportMetrics.length < 2 ? null : round1(cv * 1000) / 1000,
+          // Report the raw CV (rounded) if available; note that cvRaw may be
+          // undefined (null/NaN) when the mean is too small to compute a
+          // meaningful relative measure.
+          coefficientOfVariation: reportMetrics.length < 2 || !cvValid ? null : round1(cvRaw * 1000) / 1000,
         },
         deemedToGains: {
           score: deemedToGainsScore !== null ? round1(deemedToGainsScore) : null,
@@ -216,17 +226,39 @@ class ScoreCalculatorService {
   }
 
   /**
-   * Coefficient of Variation: population stddev / mean.
-   * Returns 0 when fewer than 2 values are provided or when the mean is zero.
+   * Coefficient of Variation (population): stddev / |mean|.
+   *
+   * Important notes / defensive behaviour:
+   * - If fewer than 2 values are provided the CV is undefined (returns NaN).
+   * - If the mean is zero or too close to zero (relative to the data
+   *   magnitude) the CV is considered undefined and NaN is returned. This
+   *   avoids treating a tiny mean as "perfect stability" or producing
+   *   arbitrarily large CV values caused by tiny denominators.
+   * - Uses the population variance (divide by N). The denominator uses the
+   *   absolute value of the mean so the CV is non-negative.
+   *
    * @param {number[]} values
-   * @returns {number}
+   * @returns {number} CV as a non-negative number, or NaN when undefined
    */
   _coefficientOfVariation(values) {
-    if (values.length < 2) return 0;
+    if (!Array.isArray(values) || values.length < 2) return NaN;
+
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
-    if (mean === 0) return 0;
+
+    // If all values are exactly zero, treat this as perfectly stable → CV = 0.
+    const absValues = values.map(v => Math.abs(v));
+    const maxAbs = Math.max(...absValues);
+    if (maxAbs === 0) return 0;
+
+    // Relative threshold: if mean is tiny compared to the magnitude of the
+    // data, treat the CV as undefined. This avoids enormous CVs from tiny
+    // denominators. The multiplier (1e-6) is tunable.
+    const relThreshold = Math.max(1e-12, maxAbs * 1e-6);
+    if (Math.abs(mean) < relThreshold) return NaN;
+
     const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
-    return Math.sqrt(variance) / mean;
+    const std = Math.sqrt(variance);
+    return std / Math.abs(mean);
   }
 
   /**

@@ -44,7 +44,7 @@ const SECTIONS = [
           get: (d) => d.taxEfficiencyScoreBreakdown.consistency.score,
           format: (v) => `${v} / 100`,
           higherIsBetter: true,
-          tooltip: 'How predictable the annual deemed income is. Computed from the Coefficient of Variation (CV = stddev / mean) of yearly deemed/price ratios; the CV is inverted and scaled to 0–100 so that higher = more predictable.',
+          tooltip: 'How predictable the annual deemed income is. Computed from the Coefficient of Variation (CV = stddev / mean) of yearly deemed/price ratios and mapped to 0–100 (higher = more predictable). CV may be unavailable when the mean is too small or when there are fewer than 2 reports; in such cases a neutral predictability is shown.',
         },
     ],
   },
@@ -114,7 +114,7 @@ const SECTIONS = [
           get: (d) => d.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation,
           format: (v) => (v !== null ? v.toFixed(3) : '—'),
           lowerIsBetter: true,
-          tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed/price ratios. A lower CV means the annual deemed income is more stable (more predictable).',
+          tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed/price ratios. Lower = more stable. CV is undefined when the mean is too small relative to the data or when there are fewer than 2 reports; use Max Swing / Avg Price to inspect worst-case year-to-year jumps.',
         },
       {
         label: 'Reports Available',

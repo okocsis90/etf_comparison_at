@@ -136,10 +136,10 @@ export default function EtfScoreResult({ data }) {
             subtitle={
               data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation !== null
                 ? `CV: ${data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation.toFixed(3)}`
-                : 'Insufficient data (< 2 reports)'
+                : 'Insufficient data or mean too small to compute CV'
             }
             color={scoreToColor(data.taxEfficiencyScoreBreakdown.consistency.score)}
-            tooltip="Measures how stable the annual deemed income is relative to its average. We compute the Coefficient of Variation (CV = stddev / mean) of the yearly deemed/price ratios, invert and scale it to 0–100 so that 100 = perfectly predictable and 0 = highly variable." />
+            tooltip="Measures how stable the annual deemed income is relative to its average. We compute the Coefficient of Variation (CV = stddev / mean) of the yearly deemed/price ratios and map it to 0–100 (higher = more predictable). Note: CV is undefined when the mean is too small or when there are fewer than 2 reports; in those cases a neutral predictability is shown. CV measures typical dispersion, not worst-case jumps or directional trends." />
         </Grid>
       </Grid>
 
