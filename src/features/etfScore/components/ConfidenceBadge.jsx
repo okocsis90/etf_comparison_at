@@ -27,14 +27,15 @@ export default function ConfidenceBadge({ level, label, totalReports }) {
   const { t } = useTranslation();
   const { color } = CONFIDENCE_CONFIG[level] ?? CONFIDENCE_CONFIG[1];
   const sublabel = t(`confidence.sublabels.${level}`);
+  const levelName = t(`confidence.levels.${level}`) || label;
 
   const tooltipContent = (
     <Box sx={{ p: 0.5, maxWidth: 240 }}>
       <Typography variant="caption" fontWeight={700} display="block" mb={0.75}>
-        {t('confidence.title', { label })}
+        {t('confidence.title', { label: levelName })}
       </Typography>
       <Typography variant="caption" display="block" mb={0.75}>
-        {t('confidence.based_on', { n: totalReports, plural: totalReports !== 1 ? 's' : '' })}
+        {t('confidence.based_on', { n: totalReports })}
       </Typography>
       <Typography variant="caption" display="block" color="text.secondary">
         {t('confidence.legend')}
@@ -62,7 +63,7 @@ export default function ConfidenceBadge({ level, label, totalReports }) {
           {t('confidence.badge_label')}
         </Typography>
         <Typography variant="h6" fontWeight={800} color="inherit" lineHeight={1.2} mt={0.25}>
-          {label}
+          {levelName}
         </Typography>
         <Typography variant="caption" color="inherit" sx={{ opacity: 0.85 }}>
           {sublabel}
