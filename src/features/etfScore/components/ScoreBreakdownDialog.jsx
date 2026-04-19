@@ -108,6 +108,13 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
           can plan for it. <strong>Higher is better.</strong>
         </Typography>
 
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          We use two complementary measures to describe year-to-year behaviour: CV (Coefficient of
+          Variation) captures typical, relative variability around the average, while Max Swing
+          reports the worst-case year-to-year absolute jump. Together they show both typical
+          dispersion and extreme jumps.
+        </Typography>
+
         <Divider sx={{ mb: 3 }} />
 
         {/* Component 1: Tax Burden */}
