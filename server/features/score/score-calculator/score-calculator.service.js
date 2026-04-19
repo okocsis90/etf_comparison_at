@@ -150,8 +150,14 @@ class ScoreCalculatorService {
   _calculateTaxEfficiencyGrade({ avgDeemedIncomeToEtfPricePercent, deemedGainsToTotalGainsPercent, totalGains, reportMetrics }) {
     const W1 = 0.50, W2 = 0.35, W3 = 0.15;
 
+    // Tunable mapping constant for the tax-burden component. This value
+    // controls the sensitivity of the linear mapping from average deemed%
+    // to score. Previous implementation used 2.0 (2% → 0). Increase this to
+    // reduce sensitivity (e.g. 3.0 ⇒ 3% → 0).
+    const TAX_BURDEN_SCALE = 3.0;
+
     // ── Component 1: Annual Tax Burden ──────────────────────────────────────
-    const taxBurdenScore = Math.max(0, 100 * (1 - avgDeemedIncomeToEtfPricePercent / 2.0));
+    const taxBurdenScore = Math.max(0, 100 * (1 - avgDeemedIncomeToEtfPricePercent / TAX_BURDEN_SCALE));
 
     // ── Component 2: Year-over-Year Consistency ──────────────────────────────
     const rates = reportMetrics.map(m => m.deemedIncomeToEtfPricePercent);

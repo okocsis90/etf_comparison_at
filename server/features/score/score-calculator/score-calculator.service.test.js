@@ -651,8 +651,8 @@ describe('ScoreCalculatorService', () => {
 
             const bd = service.calculateScore(input).taxEfficiencyScoreBreakdown;
 
-            // taxBurden score = 100 * (1 - 1/2) = 50
-            expect(bd.taxBurden.score).toBeCloseTo(50);
+            // taxBurden score = 100 * (1 - 1/3) = 66.666... → rounded to 66.7
+            expect(bd.taxBurden.score).toBeCloseTo(66.7);
             expect(bd.taxBurden.avgDeemedToEtfPricePct).toBeCloseTo(1);
         });
 
