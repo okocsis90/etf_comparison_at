@@ -109,10 +109,12 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
         </Typography>
 
         <Typography variant="body2" color="text.secondary" mb={3}>
-          We use two complementary measures to describe year-to-year behaviour: CV (Coefficient of
-          Variation) captures typical, relative variability around the average, while Max Swing
-          reports the worst-case year-to-year absolute jump. Together they show both typical
-          dispersion and extreme jumps.
+          The grade's predictability component uses CV (Coefficient of Variation) to capture
+          typical, relative year-to-year variability around the average. We also surface a
+          complementary metric called "Max Swing" in the main results (under "Consistency
+          Metrics"); Max Swing reports the worst-case absolute year-to-year jump but is not
+          directly part of the numeric grade. Showing both helps you see typical dispersion
+          (CV) and extreme jumps (Max Swing).
         </Typography>
 
         <Divider sx={{ mb: 3 }} />
