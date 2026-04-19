@@ -9,6 +9,7 @@ import ConfidenceBadge from './ConfidenceBadge';
 import ScoreBreakdownDialog from './ScoreBreakdownDialog';
 import ReportChart from './ReportChart';
 import ReportTable from './ReportTable';
+import { useTranslation } from '../../../i18n/LanguageProvider';
 
 /**
  * Full result panel rendered after a successful score fetch.
@@ -19,6 +20,8 @@ import ReportTable from './ReportTable';
  */
 export default function EtfScoreResult({ data }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { t } = useTranslation();
 
   return (
     <Box>
@@ -39,7 +42,7 @@ export default function EtfScoreResult({ data }) {
               <Chip label={data.ticker} size="small" variant="outlined" color="secondary" />
             )}
             <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
-            <Chip label={`${data.totalReports} report${data.totalReports !== 1 ? 's' : ''}`} size="small" variant="outlined" />
+            <Chip label={`${data.totalReports} ${data.totalReports !== 1 ? t('labels.reports_plural') : t('labels.report')}`} size="small" variant="outlined" />
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch' }}>
@@ -66,80 +69,80 @@ export default function EtfScoreResult({ data }) {
       />
 
       {/* ── Price Overview ─────────────────────────────────────────────────── */}
-      <SectionTitle>Price Overview</SectionTitle>
+      <SectionTitle>{t('etfScore.section_priceOverview')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Current ETF Price" value={eur(data.currentEtfPriceEur)} color="#1976d2"
-            tooltip="Latest available ETF price converted to EUR" />
+          <MetricCard title={t('etfScore.metric_currentPrice')} value={eur(data.currentEtfPriceEur)} color="#1976d2"
+            tooltip={t('etfScore.currentPrice_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Price at Period Start" value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
+          <MetricCard title={t('etfScore.metric_pricePeriodStart')} value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
             subtitle={dateLabel(data.firstBusinessYearStart)} color="#7b1fa2"
-            tooltip="ETF price at the start of the first business year (Geschäftsjahr Beginn as reported in the OeKB fund tax report), in EUR" />
+            tooltip={t('etfScore.periodStart_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Price at Period End" value={eur(data.etfPriceAtLastBusinessYearEndEur)}
+          <MetricCard title={t('etfScore.metric_pricePeriodEnd')} value={eur(data.etfPriceAtLastBusinessYearEndEur)}
             subtitle={dateLabel(data.lastBusinessYearEnd)} color="#7b1fa2"
-            tooltip="ETF price at the end of the last business year (Geschäftsjahr Ende as reported in the OeKB fund tax report), in EUR" />
+            tooltip={t('etfScore.periodEnd_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Total Gains (Period)" value={eur(data.totalGains)}
+          <MetricCard title={t('etfScore.metric_totalGainsPeriod')} value={eur(data.totalGains)}
             color={data.totalGains >= 0 ? '#2e7d32' : '#c62828'}
-            tooltip="Price appreciation over the analysis period in EUR. Dates come from the OeKB fund tax reports (business year = Geschäftsjahr start/end reported by OeKB)." />
+            tooltip={t('etfScore.totalGains_tooltip')} />
         </Grid>
       </Grid>
 
       <Divider sx={{ mb: 3 }} />
 
       {/* ── Deemed Income Summary ──────────────────────────────────────────── */}
-      <SectionTitle>Deemed Income (Ausschüttungsgleiche Erträge)</SectionTitle>
+      <SectionTitle>{t('etfScore.section_deemedIncome')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Total Deemed Gains" value={eur(data.deemedGains)} color="#e65100"
-            tooltip="Sum of all deemed incomes across all reports, in EUR" />
+          <MetricCard title={t('etfScore.metric_totalDeemedGains')} value={eur(data.deemedGains)} color="#e65100"
+            tooltip={t('scoreDialog.taxBurden_explain')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Deemed / Total Gains" value={pct(data.deemedGainsToTotalGainsPercent)} color="#e65100"
-            tooltip="Deemed gains as a percentage of total price gains over the period" />
+          <MetricCard title={t('etfScore.metric_deemedToTotal')} value={pct(data.deemedGainsToTotalGainsPercent)} color="#e65100"
+            tooltip={t('scoreDialog.deemed_explain')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Avg Deemed Income / Year" value={eur(data.avgDeemedIncomeEur)} color="#f57c00"
-            tooltip="Average deemed income per report year, in EUR" />
+          <MetricCard title={t('etfScore.metric_avgDeemedPerYear')} value={eur(data.avgDeemedIncomeEur)} color="#f57c00"
+            tooltip={t('scoreDialog.taxBurden_explain')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Avg Deemed / Current Price" value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
-            tooltip="Average yearly deemed income as a percentage of the current ETF price — useful for comparing the ongoing annual tax burden between ETFs (shows the yearly tax cost relative to your current holding value)." />
+          <MetricCard title={t('etfScore.metric_avgDeemedToCurrent')} value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
+            tooltip={t('etfScore.avgDeemedToCurrent_tooltip')} />
         </Grid>
       </Grid>
 
       <Divider sx={{ mb: 3 }} />
 
       {/* ── Consistency Metrics ────────────────────────────────────────────── */}
-      <SectionTitle>Consistency Metrics</SectionTitle>
+      <SectionTitle>{t('etfScore.section_consistency')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Avg Deemed / ETF Price %" value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
-            tooltip="Average of (deemed income / ETF price on report date) across all reports — the primary annual tax burden indicator (shows typical yearly deemed income relative to ETF value)." />
+          <MetricCard title={t('etfScore.metric_avgDeemedEtfPct')} value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
+            tooltip={t('etfScore.predictability_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Max Deemed Income Diff" value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
-            tooltip="Largest absolute difference in deemed income between any two years — shows worst-case year-to-year swing in EUR" />
+          <MetricCard title={t('etfScore.metric_maxDeemedDiff')} value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
+            tooltip={t('comparison.maxSwing_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title="Max Swing / Avg Price" value={pct(data.maxDiffToAvgEtfPricePercent)} color="#d32f2f"
-            tooltip="Max deemed income swing as a % of average ETF price — answers 'how large was the worst-case annual tax base jump relative to my holding value?'" />
+          <MetricCard title={t('etfScore.metric_maxSwingAvgPrice')} value={pct(data.maxDiffToAvgEtfPricePercent)} color="#d32f2f"
+            tooltip={t('comparison.maxSwing_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Predictability Score"
+            title={t('etfScore.metric_predictabilityScore')}
             value={`${data.taxEfficiencyScoreBreakdown.consistency.score} / 100`}
             subtitle={
               data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation !== null
                 ? `CV: ${data.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation.toFixed(3)}`
-                : 'Insufficient data or mean too small to compute CV'
+                : t('scoreDialog.cv_unavailable')
             }
             color={scoreToColor(data.taxEfficiencyScoreBreakdown.consistency.score)}
-            tooltip="Measures how stable the annual deemed income is relative to its average. We compute the Coefficient of Variation (CV = stddev / mean) of the yearly deemed/price ratios and map it to 0–100 (higher = more predictable). Note: CV is undefined when the mean is too small or when there are fewer than 2 reports; in those cases a neutral predictability is shown. CV measures typical dispersion, not worst-case jumps or directional trends." />
+            tooltip={t('etfScore.predictability_tooltip')} />
         </Grid>
       </Grid>
 

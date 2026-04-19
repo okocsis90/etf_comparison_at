@@ -1,15 +1,16 @@
 import { Box, Typography, Tooltip } from '@mui/material';
+import { useTranslation } from '../../../i18n/LanguageProvider';
 
 /**
  * Colour and sub-label for each confidence level.
  * Levels 1–5 map directly to the confidenceLevel field returned by the API.
  */
 const CONFIDENCE_CONFIG = {
-  1: { color: '#78909c', sublabel: '1–2 reports' },
-  2: { color: '#ef6c00', sublabel: '3–4 reports' },
-  3: { color: '#f9a825', sublabel: '5–6 reports' },
-  4: { color: '#558b2f', sublabel: '7–8 reports' },
-  5: { color: '#1b5e20', sublabel: '9+ reports'  },
+  1: { color: '#78909c' },
+  2: { color: '#ef6c00' },
+  3: { color: '#f9a825' },
+  4: { color: '#558b2f' },
+  5: { color: '#1b5e20'  },
 };
 
 /**
@@ -23,20 +24,20 @@ const CONFIDENCE_CONFIG = {
  * }} props
  */
 export default function ConfidenceBadge({ level, label, totalReports }) {
-  const { color, sublabel } = CONFIDENCE_CONFIG[level] ?? CONFIDENCE_CONFIG[1];
+  const { t } = useTranslation();
+  const { color } = CONFIDENCE_CONFIG[level] ?? CONFIDENCE_CONFIG[1];
+  const sublabel = t(`confidence.sublabels.${level}`);
 
   const tooltipContent = (
     <Box sx={{ p: 0.5, maxWidth: 240 }}>
       <Typography variant="caption" fontWeight={700} display="block" mb={0.75}>
-        Data Confidence — {label}
+        {t('confidence.title', { label })}
       </Typography>
       <Typography variant="caption" display="block" mb={0.75}>
-        Based on <strong>{totalReports} yearly report{totalReports !== 1 ? 's' : ''}</strong>.
-        More years of data reveal long-term patterns in deemed income and reduce the
-        influence of any single unusual year on the analysis.
+        {t('confidence.based_on', { n: totalReports, plural: totalReports !== 1 ? 's' : '' })}
       </Typography>
       <Typography variant="caption" display="block" color="text.secondary">
-        Preliminary (&lt;3) · Limited (3–4) · Moderate (5–6) · Reliable (7–8) · Comprehensive (9+)
+        {t('confidence.legend')}
       </Typography>
     </Box>
   );
@@ -58,7 +59,7 @@ export default function ConfidenceBadge({ level, label, totalReports }) {
         }}
       >
         <Typography variant="caption" fontWeight={700} color="inherit" display="block" letterSpacing={0.5}>
-          DATA QUALITY
+          {t('confidence.badge_label')}
         </Typography>
         <Typography variant="h6" fontWeight={800} color="inherit" lineHeight={1.2} mt={0.25}>
           {label}

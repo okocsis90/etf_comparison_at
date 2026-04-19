@@ -1,5 +1,6 @@
 import { Box, Alert, Grid, Paper, Typography, Chip } from '@mui/material';
-import { GRADE_COLORS, GRADE_LABELS } from '../../etfScore/config/gradeConfig';
+import { useTranslation } from '../../../i18n/LanguageProvider';
+import { GRADE_COLORS } from '../../etfScore/config/gradeConfig';
 import ComparisonTable from './ComparisonTable';
 
 // ── Per-ETF summary card ──────────────────────────────────────────────────────
@@ -9,6 +10,7 @@ import ComparisonTable from './ComparisonTable';
  * Rendered above the comparison table, one card per ETF.
  */
 function EtfSummaryCard({ data }) {
+  const { t } = useTranslation();
   const gradeColor = GRADE_COLORS[data.taxEfficiencyGrade] ?? '#546e7a';
 
   return (
@@ -55,19 +57,19 @@ function EtfSummaryCard({ data }) {
           {data.taxEfficiencyGrade}
         </Typography>
         <Typography variant="caption" fontWeight={700} color="inherit" display="block" letterSpacing={0.5} mt={0.25}>
-          TAX EFFICIENCY
+          {t('labels.taxEfficiency')}
         </Typography>
         <Typography variant="caption" color="inherit" sx={{ opacity: 0.85 }}>
-          {GRADE_LABELS[data.taxEfficiencyGrade]}
+          {t(`grades.${data.taxEfficiencyGrade}`)}
         </Typography>
       </Box>
 
       {/* Score + confidence */}
       <Typography variant="body2" color="text.secondary">
-        Score: <strong style={{ color: gradeColor }}>{data.taxEfficiencyScore} / 100</strong>
+        {t('labels.score')}: <strong style={{ color: gradeColor }}>{data.taxEfficiencyScore} / 100</strong>
       </Typography>
       <Typography variant="caption" color="text.secondary">
-        {data.confidenceLabel} · {data.totalReports} report{data.totalReports !== 1 ? 's' : ''}
+        {data.confidenceLabel} · {data.totalReports} {data.totalReports !== 1 ? t('labels.reports_plural') : t('labels.report')}
       </Typography>
     </Paper>
   );
@@ -97,7 +99,7 @@ export default function EtfComparisonResult({ results }) {
       {/* Need at least 2 successful results to show a comparison */}
       {successful.length < 2 && (
         <Alert severity="warning" sx={{ mt: 1 }}>
-          At least 2 ETFs must load successfully to show a comparison.
+          {t('etfComparison.need_at_least_two')}
         </Alert>
       )}
 

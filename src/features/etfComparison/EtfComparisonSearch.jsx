@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../../i18n/LanguageProvider';
 import {
   Box,
   TextField,
@@ -21,6 +22,7 @@ const MIN_ETFS = 2;
 const MAX_ETFS = 4;
 
 export default function EtfComparisonSearch() {
+  const { t } = useTranslation();
   const [inputs, setInputs] = useState(['', '']);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -69,7 +71,7 @@ export default function EtfComparisonSearch() {
   return (
     <Box>
       <Typography variant="body2" color="text.secondary" mb={3}>
-        Enter {MIN_ETFS}–{MAX_ETFS} ISINs to compare their Austrian tax efficiency metrics side by side.
+        {t('etfComparison.search_intro', { min: MIN_ETFS, max: MAX_ETFS })}
       </Typography>
 
       {/* ── ISIN inputs ────────────────────────────────────────────────────── */}
@@ -77,12 +79,12 @@ export default function EtfComparisonSearch() {
         {inputs.map((val, i) => (
           <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
             <TextField
-              label={`ETF ${i + 1}`}
-              placeholder="e.g. IE00B4L5Y983"
+              label={t('common.etfLabel', { idx: i + 1 })}
+              placeholder={t('common.isinPlaceholder')}
               value={val}
               onChange={(e) => handleChange(i, e.target.value)}
               error={val.length > 0 && !isValidIsin(val)}
-              helperText={val.length > 0 && !isValidIsin(val) ? 'Invalid ISIN' : ' '}
+              helperText={val.length > 0 && !isValidIsin(val) ? t('common.invalidIsin') : ' '}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -111,7 +113,7 @@ export default function EtfComparisonSearch() {
       <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
         {inputs.length < MAX_ETFS && (
           <Button startIcon={<AddIcon />} variant="outlined" onClick={handleAdd} size="medium">
-            Add ETF
+            {t('actions.addEtf')}
           </Button>
         )}
         <Button
@@ -123,14 +125,14 @@ export default function EtfComparisonSearch() {
           color={isRecalculate ? 'warning' : 'primary'}
           sx={{ px: 4 }}
         >
-          {loading ? <CircularProgress size={22} color="inherit" /> : isRecalculate ? 'Recalculate' : 'Compare'}
+          {loading ? <CircularProgress size={22} color="inherit" /> : isRecalculate ? t('actions.recalculate') : t('actions.compare')}
         </Button>
       </Box>
 
       {/* ── Stale results notice ────────────────────────────────────────────── */}
       {isDirty && results && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Your inputs have changed. Click <strong>Recalculate</strong> to update the comparison.
+          {t('etfComparison.staleResults')}
         </Alert>
       )}
 

@@ -5,26 +5,41 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { EtfScoreSearch } from './features/etfScore';
 import { EtfComparisonSearch } from './features/etfComparison';
+import { LanguageProvider, useTranslation } from './i18n/LanguageProvider';
+import LanguageSelector from './components/LanguageSelector';
 
-const TABS = [
-  {
-    label: 'ETF Analyser',
-    icon: <AnalyticsIcon />,
-    title: 'ETF Score Analyser',
-    description: 'Enter an ISIN to calculate deemed income metrics, consistency scores, and price comparisons for Austrian tax purposes.',
-    component: <EtfScoreSearch />,
-  },
-  {
-    label: 'Compare ETFs',
-    icon: <CompareArrowsIcon />,
-    title: 'ETF Comparison',
-    description: 'Compare 2 to 4 ETFs side by side across all Austrian tax efficiency metrics. The best value in each row is highlighted.',
-    component: <EtfComparisonSearch />,
-  },
-];
+function TabsDef() {
+  const { t } = useTranslation();
+  return [
+    {
+      label: t('tabs.analyser.label'),
+      icon: <AnalyticsIcon />,
+      title: t('tabs.analyser.title'),
+      description: t('tabs.analyser.description'),
+      component: <EtfScoreSearch />,
+    },
+    {
+      label: t('tabs.compare.label'),
+      icon: <CompareArrowsIcon />,
+      title: t('tabs.compare.title'),
+      description: t('tabs.compare.description'),
+      component: <EtfComparisonSearch />,
+    },
+  ];
+}
 
 export default function App() {
+  return (
+    <LanguageProvider defaultLocale="de">
+      <AppInner />
+    </LanguageProvider>
+  );
+}
+
+function AppInner() {
   const [activeTab, setActiveTab] = useState(0);
+  const { t } = useTranslation();
+  const TABS = TabsDef();
   const current = TABS[activeTab];
 
   return (
@@ -35,8 +50,9 @@ export default function App() {
         <Toolbar>
           <BarChartIcon sx={{ mr: 1.5 }} />
           <Typography variant="h6" fontWeight={700} letterSpacing={0.5}>
-            ETF Comparison AT
+            {t('appTitle')}
           </Typography>
+          <LanguageSelector />
         </Toolbar>
       </AppBar>
 

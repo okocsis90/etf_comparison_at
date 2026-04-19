@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../../i18n/LanguageProvider';
 import {
   Box,
   TextField,
@@ -13,6 +14,7 @@ import { fetchScore } from './api/scoreApi';
 import EtfScoreResult from './components/EtfScoreResult';
 
 export default function EtfScoreSearch() {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ export default function EtfScoreSearch() {
 
   const normalized = input.trim().toUpperCase();
   const formatError = touched && normalized.length > 0 && !isValidIsin(normalized)
-    ? 'Invalid ISIN — must be 2 letters + 9 alphanumeric + 1 check digit (e.g. IE00B4L5Y983)'
+    ? t('common.invalidIsinDetailed')
     : null;
   const canSearch = isValidIsin(normalized) && !loading;
 
@@ -48,9 +50,9 @@ export default function EtfScoreSearch() {
     <Box>
       {/* Search row */}
       <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-        <TextField
-          label="ISIN"
-          placeholder="e.g. IE00B4L5Y983"
+          <TextField
+          label={t('common.isinLabel')}
+          placeholder={t('common.isinPlaceholder')}
           value={input}
           onChange={(e) => { setInput(e.target.value); setTouched(true); }}
           onKeyDown={handleKeyDown}
@@ -77,8 +79,8 @@ export default function EtfScoreSearch() {
           onClick={handleSearch}
           disabled={!canSearch}
           sx={{ height: 56, px: 4, mt: 0 }}
-        >
-          {loading ? <CircularProgress size={22} color="inherit" /> : 'Analyse'}
+          >
+          {loading ? <CircularProgress size={22} color="inherit" /> : t('actions.analyse')}
         </Button>
       </Box>
 

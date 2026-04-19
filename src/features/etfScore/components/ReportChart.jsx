@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { eur, dateLabel } from '../../../utils/formatters';
 import SectionTitle from '../../../components/SectionTitle';
+import { useTranslation } from '../../../i18n/LanguageProvider';
 
 // ── File-local tooltip rendered inside the chart ──────────────────────────────
 
@@ -45,18 +46,19 @@ function ChartTooltip({ active, payload, label }) {
  * @param {{ reportMetrics: import('../api/scoreApi').ReportMetric[] }} props
  */
 export default function ReportChart({ reportMetrics }) {
+  const { t } = useTranslation();
   const chartData = [...reportMetrics]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map((m) => ({
       date: dateLabel(m.date),
-      'Deemed Income': m.deemedIncomeEur,
-      'ETF Price': m.etfPriceOnDateEur,
-      'Deemed / Price %': m.deemedIncomeToEtfPricePercent,
+      [t('reportChart.deemedIncome')]: m.deemedIncomeEur,
+      [t('reportChart.etfPrice')]: m.etfPriceOnDateEur,
+      [t('reportChart.deemedPct')]: m.deemedIncomeToEtfPricePercent,
     }));
 
   return (
     <>
-      <SectionTitle>Yearly Report Metrics</SectionTitle>
+      <SectionTitle>{t('reportChart.title')}</SectionTitle>
       <Paper elevation={1} sx={{ p: 2, mb: 4 }}>
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
@@ -78,9 +80,9 @@ export default function ReportChart({ reportMetrics }) {
             />
             <RechartsTooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 13 }} />
-            <Bar yAxisId="eur" dataKey="Deemed Income" fill="#e65100" opacity={0.85} radius={[3, 3, 0, 0]} />
-            <Line yAxisId="eur" type="monotone" dataKey="ETF Price" stroke="#1976d2" strokeWidth={2} dot={{ r: 4 }} />
-            <Line yAxisId="pct" type="monotone" dataKey="Deemed / Price %" stroke="#2e7d32" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
+            <Bar yAxisId="eur" dataKey={t('reportChart.deemedIncome')} fill="#e65100" opacity={0.85} radius={[3, 3, 0, 0]} />
+            <Line yAxisId="eur" type="monotone" dataKey={t('reportChart.etfPrice')} stroke="#1976d2" strokeWidth={2} dot={{ r: 4 }} />
+            <Line yAxisId="pct" type="monotone" dataKey={t('reportChart.deemedPct')} stroke="#2e7d32" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
           </ComposedChart>
         </ResponsiveContainer>
       </Paper>

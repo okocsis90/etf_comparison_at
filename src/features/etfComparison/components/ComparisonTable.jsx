@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { eur, pct } from '../../../utils/formatters';
+import { useTranslation } from '../../../i18n/LanguageProvider';
 
 // ── Metric definitions ────────────────────────────────────────────────────────
 // Each metric has:
@@ -21,108 +22,108 @@ import { eur, pct } from '../../../utils/formatters';
 //   lowerIsBetter / higherIsBetter — used for winner highlighting
 //   tooltip      — explanation shown on hover
 
-const SECTIONS = [
+const SECTIONS = (t) => [
   {
-    title: 'Tax Efficiency',
+    title: t('sections.taxEfficiency'),
     metrics: [
         {
-          label: 'Overall Score',
+          label: t('comparison.metric_overallScore'),
           get: (d) => d.taxEfficiencyScore,
           format: (v) => `${v} / 100`,
           higherIsBetter: true,
-          tooltip: 'Composite tax efficiency score (0–100). Combines tax burden, predictability, and the share of deemed vs total gains. Higher is better.',
+          tooltip: t('comparison.overallScore_tooltip'),
         },
         {
-          label: 'Avg Deemed / ETF Price %',
+          label: t('etfScore.metric_avgDeemedEtfPct'),
           get: (d) => d.avgDeemedIncomeToEtfPricePercent,
           format: pct,
           lowerIsBetter: true,
-          tooltip: 'Average annual deemed income as a percentage of the ETF price — the primary annual tax burden indicator. Shows the typical yearly deemed income relative to ETF value; lower values mean a smaller annual tax cost.',
+          tooltip: t('etfScore.predictability_tooltip'),
         },
         {
-          label: 'Predictability Score',
+          label: t('etfScore.metric_predictabilityScore'),
           get: (d) => d.taxEfficiencyScoreBreakdown.consistency.score,
           format: (v) => `${v} / 100`,
           higherIsBetter: true,
-          tooltip: 'How predictable the annual deemed income is. Computed from the Coefficient of Variation (CV = stddev / mean) of yearly deemed/price ratios and mapped to 0–100 (higher = more predictable). CV may be unavailable when the mean is too small or when there are fewer than 2 reports; in such cases a neutral predictability is shown.',
+          tooltip: t('comparison.predictability_tooltip'),
         },
     ],
   },
   {
-    title: 'Price Overview',
+    title: t('sections.priceOverview'),
     metrics: [
-      {
-        label: 'Current ETF Price',
-        get: (d) => d.currentEtfPriceEur,
-        format: eur,
-        tooltip: 'Latest available ETF price in EUR.',
-      },
         {
-          label: 'Total Gains (Period)',
+          label: t('etfScore.metric_currentPrice'),
+          get: (d) => d.currentEtfPriceEur,
+          format: eur,
+          tooltip: t('etfScore.currentPrice_tooltip'),
+        },
+        {
+          label: t('etfScore.metric_totalGainsPeriod'),
           get: (d) => d.totalGains,
           format: eur,
           higherIsBetter: true,
-          tooltip: 'Price appreciation over the analysis period in EUR. Dates are taken from the OeKB fund tax reports (business year = "Geschäftsjahr" start/end reported by OeKB).',
+          tooltip: t('etfScore.totalGains_tooltip'),
         },
     ],
   },
   {
-    title: 'Deemed Income',
+    title: t('sections.deemedIncome'),
     metrics: [
-      {
-        label: 'Total Deemed Gains',
-        get: (d) => d.deemedGains,
-        format: eur,
-        lowerIsBetter: true,
-        tooltip: 'Sum of all deemed incomes across all reports, in EUR.',
-      },
-      {
-        label: 'Deemed / Total Gains',
-        get: (d) => d.deemedGainsToTotalGainsPercent,
-        format: pct,
-        lowerIsBetter: true,
-        tooltip: 'Deemed gains as a % of total price gains over the analysis period.',
-      },
-      {
-        label: 'Avg Deemed Income / Year',
-        get: (d) => d.avgDeemedIncomeEur,
-        format: eur,
-        lowerIsBetter: true,
-        tooltip: 'Average deemed income per report year, in EUR.',
-      },
         {
-          label: 'Avg Deemed / Current Price',
+          label: t('etfScore.metric_totalDeemedGains'),
+          get: (d) => d.deemedGains,
+          format: eur,
+          lowerIsBetter: true,
+          tooltip: t('scoreDialog.taxBurden_explain'),
+        },
+        {
+          label: t('etfScore.metric_deemedToTotal'),
+          get: (d) => d.deemedGainsToTotalGainsPercent,
+          format: pct,
+          lowerIsBetter: true,
+          tooltip: t('scoreDialog.deemed_explain'),
+        },
+        {
+          label: t('etfScore.metric_avgDeemedPerYear'),
+          get: (d) => d.avgDeemedIncomeEur,
+          format: eur,
+          lowerIsBetter: true,
+          tooltip: t('scoreDialog.taxBurden_explain'),
+        },
+        {
+          label: t('etfScore.metric_avgDeemedToCurrent'),
           get: (d) => d.avgDeemedIncomeToCurrentEtfPricePercent,
           format: pct,
           lowerIsBetter: true,
-          tooltip: 'Average yearly deemed income as a percentage of the current ETF price — useful for comparing the ongoing annual tax burden between ETFs (shows the yearly tax cost relative to your current holding value).',
+          tooltip: t('etfScore.avgDeemedToCurrent_tooltip'),
         },
     ],
   },
   {
-    title: 'Consistency',
+    title: t('sections.consistency'),
     metrics: [
       {
-        label: 'Max Swing / Avg Price',
+        label: t('etfScore.metric_maxSwingAvgPrice'),
         get: (d) => d.maxDiffToAvgEtfPricePercent,
         format: pct,
         lowerIsBetter: true,
-        tooltip: 'Worst-case year-to-year swing in deemed income as % of average ETF price.',
+        tooltip: (t) => t('comparison.maxSwing_tooltip'),
       },
         {
-          label: 'Coefficient of Variation',
+          label: t('scoreDialog.cv_label'),
           get: (d) => d.taxEfficiencyScoreBreakdown.consistency.coefficientOfVariation,
           format: (v) => (v !== null ? v.toFixed(3) : '—'),
           lowerIsBetter: true,
-          tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed/price ratios. Lower = more stable. CV is undefined when the mean is too small relative to the data or when there are fewer than 2 reports; use Max Swing / Avg Price to inspect worst-case year-to-year jumps.',
+          tooltip: (t) => t('comparison.cv_tooltip'),
         },
-      {
-        label: 'Reports Available',
-        get: (d) => d.totalReports,
-        format: (v) => String(v),
-        higherIsBetter: true,
-        tooltip: 'Number of yearly reports available. More reports = more reliable analysis.',
-      },
+        {
+          label: t('comparison.metric_reportsAvailable'),
+          get: (d) => d.totalReports,
+          format: (v) => String(v),
+          higherIsBetter: true,
+          tooltip: t('comparison.reports_tooltip'),
+        },
     ],
   },
 ];
@@ -153,6 +154,9 @@ function getWinnerIndex(values, metric) {
  * @param {{ results: object[] }} props  — array of successful score API responses
  */
 export default function ComparisonTable({ results }) {
+  const { t } = useTranslation();
+  const sections = SECTIONS(t);
+
   return (
     <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
       <Table size="small" stickyHeader>
@@ -161,7 +165,7 @@ export default function ComparisonTable({ results }) {
         <TableHead>
           <TableRow>
             <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.100', minWidth: 210 }}>
-              Metric
+              {t('comparison.metric_label')}
             </TableCell>
             {results.map((d) => (
               <TableCell
@@ -189,7 +193,7 @@ export default function ComparisonTable({ results }) {
 
         {/* ── Metric rows ─────────────────────────────────────────────────── */}
         <TableBody>
-          {SECTIONS.map((section) => (
+          {sections.map((section) => (
             <>
               {/* Section heading row */}
               <TableRow key={`section-${section.title}`}>
@@ -222,7 +226,7 @@ export default function ComparisonTable({ results }) {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Typography variant="body2">{metric.label}</Typography>
                         {metric.tooltip && (
-                          <Tooltip title={metric.tooltip} arrow placement="right">
+                          <Tooltip title={typeof metric.tooltip === 'function' ? metric.tooltip(t) : metric.tooltip} arrow placement="right">
                             <InfoOutlinedIcon sx={{ fontSize: 13, color: 'text.disabled', cursor: 'help' }} />
                           </Tooltip>
                         )}
@@ -241,7 +245,7 @@ export default function ComparisonTable({ results }) {
                           transition: 'background-color 0.2s',
                         }}
                       >
-                        {val !== null && val !== undefined ? metric.format(val) : '—'}
+                        {val !== null && val !== undefined ? metric.format(val) : t('common.na')}
                       </TableCell>
                     ))}
                   </TableRow>

@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { eur, pct, dateLabel } from '../../../utils/formatters';
 import SectionTitle from '../../../components/SectionTitle';
+import { useTranslation } from '../../../i18n/LanguageProvider';
 
 /**
  * Per-report detail table. Rows above the average deemed/price ratio are
@@ -21,19 +22,20 @@ import SectionTitle from '../../../components/SectionTitle';
  * }} props
  */
 export default function ReportTable({ reportMetrics, avgDeemedIncomeToEtfPricePercent }) {
+  const { t } = useTranslation();
   const sorted = [...reportMetrics].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return (
     <>
-      <SectionTitle>Per-Report Detail</SectionTitle>
+      <SectionTitle>{t('reportTable.title')}</SectionTitle>
       <TableContainer component={Paper} elevation={1}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ '& th': { fontWeight: 700, backgroundColor: 'grey.100' } }}>
-              <TableCell>Report Date</TableCell>
-              <TableCell align="right">Deemed Income (EUR)</TableCell>
-              <TableCell align="right">ETF Price (EUR)</TableCell>
-              <TableCell align="right">Deemed / Price</TableCell>
+              <TableCell>{t('reportTable.colDate')}</TableCell>
+              <TableCell align="right">{t('reportTable.colDeemedEur')}</TableCell>
+              <TableCell align="right">{t('reportTable.colPriceEur')}</TableCell>
+              <TableCell align="right">{t('reportTable.colDeemedPct')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
