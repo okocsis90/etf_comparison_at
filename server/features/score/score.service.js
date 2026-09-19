@@ -1,6 +1,6 @@
 import ReportService from './report/report.service.js';
 import CurrencyExchangeRateService from './currency-exchange-rate/currency-exchange-rate.service.js';
-import EtfPriceService from './etf-price/etf-price.service.js';
+import EtfPriceService, { NoPriceDataError } from './etf-price/etf-price.service.js';
 import ScoreCalculatorService from './score-calculator/score-calculator.service.js';
 import { ScoreInput, ReportEntry } from './score-calculator/score-input.js';
 import logger from '../../shared/logger.js';
@@ -131,7 +131,21 @@ class ScoreService {
     for (const report of reports) {
       const reportDate = parseGermanDate(report.date);
 
-      const priceData = await this.etfPriceService.getPrice(isin, reportDate);
+      let priceData;
+      try {
+        priceData = await this.etfPriceService.getPrice(isin, reportDate);
+      } catch (error) {
+        if (error instanceof NoPriceDataError) {
+          // Report predates the ETF's available price history (e.g. before inception).
+          // Skip this entry so scoring can proceed with the remaining reports.
+          logger.warn(
+            `Skipping report for ${isin} on ${reportDate.toISOString().split('T')[0]}: ${error.message}`
+          );
+          continue;
+        }
+        throw error;
+      }
+
       const etfPriceOnDateEur = await this._convertToEur(
         priceData.price,
         priceData.currency,

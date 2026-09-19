@@ -4,6 +4,22 @@ import EtfPriceRepository from './etf-price.repository.js';
 import EtfInfoRepository from './etf-info.repository.js';
 
 /**
+ * Thrown when no price data can be obtained for a ticker around a requested date —
+ * either because the window is empty or because the date predates the ticker's
+ * first available quote (e.g. before the ETF's inception).
+ * Callers can catch this specifically to skip the affected date instead of
+ * aborting the whole workflow.
+ */
+export class NoPriceDataError extends Error {
+    constructor(message, { ticker, date } = {}) {
+        super(message);
+        this.name = 'NoPriceDataError';
+        this.ticker = ticker;
+        this.date = date;
+    }
+}
+
+/**
  * ETF price service.
  *
  * Fetches historical and current ETF prices via Yahoo Finance, with a persistent
@@ -227,18 +243,31 @@ class EtfPriceService {
             if (error?.result?.quotes) {
                 logger.warn(`Yahoo schema validation warning for chart ${ticker} – using partial result: ${error.message}`);
                 chart = error.result;
+            } else if (typeof error?.message === 'string' && error.message.includes("Data doesn't exist")) {
+                // Yahoo returns this when the requested window is entirely outside the
+                // ticker's available history — most commonly a date before ETF inception.
+                throw new NoPriceDataError(
+                    `No price data available for ${ticker} around ${targetDate.toISOString().split('T')[0]} (likely before ticker inception)`,
+                    { ticker, date: targetDate }
+                );
             } else {
                 throw error;
             }
         }
 
         if (!chart?.quotes?.length) {
-            throw new Error(`No price data found for ${ticker} around ${targetDate.toISOString().split('T')[0]}`);
+            throw new NoPriceDataError(
+                `No price data found for ${ticker} around ${targetDate.toISOString().split('T')[0]}`,
+                { ticker, date: targetDate }
+            );
         }
 
         const priceData = this._findBestPriceData(chart.quotes, targetDate);
         if (!priceData) {
-            throw new Error(`No valid price data found for ${ticker} around ${targetDate.toISOString().split('T')[0]}`);
+            throw new NoPriceDataError(
+                `No valid price data found for ${ticker} around ${targetDate.toISOString().split('T')[0]}`,
+                { ticker, date: targetDate }
+            );
         }
 
         const currency = chart.meta?.currency ?? null;

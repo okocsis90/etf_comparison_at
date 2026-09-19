@@ -30,6 +30,14 @@ jest.unstable_mockModule('./etf-price/etf-price.service.js', () => ({
         getCurrentPrice: mockGetCurrentPrice,
         getEtfInfo: mockGetEtfInfo,
     })),
+    NoPriceDataError: class NoPriceDataError extends Error {
+        constructor(message, { ticker, date } = {}) {
+            super(message);
+            this.name = 'NoPriceDataError';
+            this.ticker = ticker;
+            this.date = date;
+        }
+    },
 }));
 
 const mockCalculateScore = jest.fn();

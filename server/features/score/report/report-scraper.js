@@ -27,7 +27,8 @@ class ReportScraper {
 
     async launchBrowser() {
         this.browser = await puppeteer.launch({
-            headless: true,
+            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            headless: true
         });
         const page = await this.browser.newPage();
         this.reportPage = new ReportPage(page, this.isin);
