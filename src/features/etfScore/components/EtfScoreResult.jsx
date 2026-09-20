@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Grid, Divider, Typography, Chip } from '@mui/material';
+import { Box, Grid, Divider, Typography, Chip, Alert } from '@mui/material';
 import { eur, pct, dateLabel } from '../../../utils/formatters';
 import { scoreToColor } from '../config/gradeConfig';
 import MetricCard from '../../../components/MetricCard';
@@ -25,6 +25,13 @@ export default function EtfScoreResult({ data }) {
 
   return (
     <Box>
+      {data.priceDataWarnings?.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          {t('etfScore.priceDataWarning', {
+            date: dateLabel(data.priceDataWarnings[0].usedDate),
+          })}
+        </Alert>
+      )}
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
@@ -158,4 +165,3 @@ export default function EtfScoreResult({ data }) {
     </Box>
   );
 }
-

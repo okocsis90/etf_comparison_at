@@ -42,7 +42,7 @@ class ScoreService {
     const lastBusinessYearEnd = parseGermanDate(sortedReports[sortedReports.length - 1].businessYearEnd);
 
     // Step 3: Build ScoreInput with all required data
-    const scoreInput = await this._buildScoreInput({
+    const { scoreInput, priceDataWarnings } = await this._buildScoreInput({
       isin,
       originalCurrency,
       reports: reportResult.reports,
@@ -52,6 +52,7 @@ class ScoreService {
 
     // Step 4: Calculate score
     const scoreResult = this.scoreCalculatorService.calculateScore(scoreInput);
+    scoreResult.priceDataWarnings = priceDataWarnings;
     logger.info(`Score calculation completed for ISIN: ${isin}`);
 
     // Step 5: Attach ETF metadata (name + ticker) — looked up separately so the
@@ -73,16 +74,14 @@ class ScoreService {
     firstBusinessYearStart,
     lastBusinessYearEnd
   }) {
-    // Fetch ETF prices for boundary dates
-    const [
-      priceAtFirstStart,
-      priceAtLastEnd,
-      currentPrice
-    ] = await Promise.all([
-      this.etfPriceService.getPrice(isin, firstBusinessYearStart),
-      this.etfPriceService.getPrice(isin, lastBusinessYearEnd),
+    const priceDataWarnings = [];
+    const [firstBoundary, lastBoundary, currentPrice] = await Promise.all([
+      this._getBoundaryPrice(isin, firstBusinessYearStart, 'start', priceDataWarnings),
+      this._getBoundaryPrice(isin, lastBusinessYearEnd, 'end', priceDataWarnings),
       this.etfPriceService.getCurrentPrice(isin)
     ]);
+    const priceAtFirstStart = firstBoundary.price;
+    const priceAtLastEnd = lastBoundary.price;
 
     // Convert boundary prices to EUR if needed
     const etfPriceAtFirstBusinessYearStartEur = await this._convertToEur(
@@ -110,16 +109,44 @@ class ScoreService {
       originalCurrency
     );
 
-    return new ScoreInput({
-      isin,
-      originalCurrency,
-      reports: reportEntries,
-      etfPriceAtFirstBusinessYearStartEur,
-      etfPriceAtLastBusinessYearEndEur,
-      currentEtfPriceEur,
-      firstBusinessYearStart,
-      lastBusinessYearEnd
-    });
+    return {
+      scoreInput: new ScoreInput({
+        isin,
+        originalCurrency,
+        reports: reportEntries,
+        etfPriceAtFirstBusinessYearStartEur,
+        etfPriceAtLastBusinessYearEndEur,
+        currentEtfPriceEur,
+        firstBusinessYearStart,
+        lastBusinessYearEnd
+      }),
+      priceDataWarnings
+    };
+  }
+
+  async _getBoundaryPrice(isin, requestedDate, boundary, warnings) {
+    try {
+      return { price: await this.etfPriceService.getPrice(isin, requestedDate) };
+    } catch (error) {
+      if (!(error instanceof NoPriceDataError)) throw error;
+
+      const price = boundary === 'start'
+        ? await this.etfPriceService.getEarliestAvailablePrice(isin)
+        : await this.etfPriceService.getLatestAvailablePriceBefore(isin, requestedDate);
+      warnings.push({
+        type: 'historical_price_fallback',
+        boundary,
+        ticker: price.ticker,
+        requestedDate,
+        usedDate: price.resultDate,
+        message: error.message
+      });
+      logger.warn(
+        `Using ${boundary} price fallback for ${isin}: requested ${requestedDate.toISOString().split('T')[0]}, ` +
+        `using ${price.resultDate.toISOString().split('T')[0]}`
+      );
+      return { price };
+    }
   }
 
   /**

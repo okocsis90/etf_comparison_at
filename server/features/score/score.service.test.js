@@ -22,11 +22,15 @@ jest.unstable_mockModule('./currency-exchange-rate/currency-exchange-rate.servic
 }));
 
 const mockGetPrice = jest.fn();
+const mockGetEarliestAvailablePrice = jest.fn();
+const mockGetLatestAvailablePriceBefore = jest.fn();
 const mockGetCurrentPrice = jest.fn();
 const mockGetEtfInfo = jest.fn().mockResolvedValue({ ticker: 'VUSA.AS', name: 'Vanguard S&P 500 UCITS ETF' });
 jest.unstable_mockModule('./etf-price/etf-price.service.js', () => ({
     default: jest.fn().mockImplementation(() => ({
         getPrice: mockGetPrice,
+        getEarliestAvailablePrice: mockGetEarliestAvailablePrice,
+        getLatestAvailablePriceBefore: mockGetLatestAvailablePriceBefore,
         getCurrentPrice: mockGetCurrentPrice,
         getEtfInfo: mockGetEtfInfo,
     })),
@@ -242,6 +246,89 @@ describe('ScoreService', () => {
     // --- getScore: error cases ---
 
     describe('getScore - error handling', () => {
+        test('should use the earliest price when the first boundary predates ticker inception', async () => {
+            const reportResult = makeReportResult({
+                currency: 'EUR',
+                reports: [makeReport({
+                    date: '15.01.2022',
+                    businessYearStart: '01.01.2021',
+                    businessYearEnd: '31.12.2021',
+                })],
+            });
+            const missingPrice = new (await import('./etf-price/etf-price.service.js')).NoPriceDataError(
+                'No price data available before inception',
+                { ticker: 'XZRE.L', date: new Date('2021-01-01') }
+            );
+
+            mockGetReportResult.mockResolvedValue(reportResult);
+            mockGetPrice
+                .mockRejectedValueOnce(missingPrice)
+                .mockResolvedValue(makePriceData({ price: 20 }));
+            mockGetEarliestAvailablePrice.mockResolvedValue(makePriceData({
+                price: 30,
+                resultDate: new Date('2021-05-26'),
+            }));
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 40 }));
+            mockCalculateScore.mockReturnValue({});
+
+            await expect(service.getScore(ISIN)).resolves.toEqual(expect.objectContaining({
+                priceDataWarnings: [expect.objectContaining({
+                    boundary: 'start',
+                    usedDate: new Date('2021-05-26'),
+                })],
+            }));
+            expect(mockGetEarliestAvailablePrice).toHaveBeenCalledWith(ISIN);
+            expect(mockCalculateScore).toHaveBeenCalled();
+        });
+
+        test('should use the latest price before the end boundary when it has no quote', async () => {
+            const reportResult = makeReportResult({ currency: 'EUR', reports: [makeReport()] });
+            const missingPrice = new (await import('./etf-price/etf-price.service.js')).NoPriceDataError(
+                'No price data available around the requested date',
+                { ticker: 'XZRE.L', date: new Date('2023-12-31') }
+            );
+
+            mockGetReportResult.mockResolvedValue(reportResult);
+            mockGetPrice
+                .mockResolvedValueOnce(makePriceData({ price: 20 }))
+                .mockRejectedValueOnce(missingPrice)
+                .mockResolvedValue(makePriceData({ price: 20 }));
+            mockGetLatestAvailablePriceBefore.mockResolvedValue(makePriceData({
+                price: 35,
+                resultDate: new Date('2023-12-29'),
+            }));
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 40 }));
+            mockCalculateScore.mockReturnValue({});
+
+            await service.getScore(ISIN);
+
+            expect(mockGetLatestAvailablePriceBefore).toHaveBeenCalledWith(ISIN, expect.any(Date));
+            expect(mockCalculateScore).toHaveBeenCalled();
+            expect(mockCalculateScore.mock.calls[0][0].etfPriceAtLastBusinessYearEndEur).toBe(35);
+        });
+
+        test('should skip an unavailable report price while retaining boundary prices', async () => {
+            const reportResult = makeReportResult({ currency: 'EUR', reports: [makeReport()] });
+            const missingPrice = new (await import('./etf-price/etf-price.service.js')).NoPriceDataError(
+                'Report date is before ticker inception',
+                { ticker: 'XZRE.L', date: new Date('2023-01-15') }
+            );
+
+            mockGetReportResult.mockResolvedValue(reportResult);
+            mockGetPrice
+                .mockResolvedValueOnce(makePriceData({ price: 20 }))
+                .mockResolvedValueOnce(makePriceData({ price: 25 }))
+                .mockRejectedValueOnce(missingPrice);
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 40 }));
+            mockCalculateScore.mockReturnValue({});
+
+            await service.getScore(ISIN);
+
+            expect(mockCalculateScore.mock.calls[0][0].reports).toHaveLength(0);
+            expect(mockCalculateScore.mock.calls[0][0].etfPriceAtFirstBusinessYearStartEur).toBe(20);
+            expect(mockCalculateScore.mock.calls[0][0].etfPriceAtLastBusinessYearEndEur).toBe(25);
+        });
+
         test('should throw when no reports are found', async () => {
             mockGetReportResult.mockResolvedValue(makeReportResult({ reports: [] }));
 

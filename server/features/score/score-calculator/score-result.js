@@ -35,6 +35,7 @@
  * @property {{ taxBurden: object, consistency: object, deemedToGains: object }} taxEfficiencyScoreBreakdown - Per-component score details
  * @property {1|2|3|4|5} confidenceLevel - Data confidence level (1 = Preliminary … 5 = Comprehensive)
  * @property {'Preliminary'|'Limited'|'Moderate'|'Reliable'|'Comprehensive'} confidenceLabel - Human-readable confidence label
+ * @property {object[]} priceDataWarnings - Recoverable historical price-data limitations
  */
 
 class ReportMetric {
@@ -77,6 +78,7 @@ class ScoreResult {
     taxEfficiencyScoreBreakdown,
     confidenceLevel,
     confidenceLabel,
+    priceDataWarnings = [],
   }) {
     this.isin = isin;
     this.ticker = ticker ?? null;
@@ -102,6 +104,7 @@ class ScoreResult {
     this.taxEfficiencyScoreBreakdown = taxEfficiencyScoreBreakdown;
     this.confidenceLevel = confidenceLevel;
     this.confidenceLabel = confidenceLabel;
+    this.priceDataWarnings = priceDataWarnings;
   }
 }
 

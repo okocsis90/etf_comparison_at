@@ -142,7 +142,8 @@ const translations = {
       metric_avgDeemedEtfPct: 'Durchschn. Ausschüttungsgleiche / ETF-Preis %',
       metric_maxDeemedDiff: 'Max. Differenz ausgeschüttungsgl.',
       metric_maxSwingAvgPrice: 'Max. Ausschlag / Durchschn. Preis',
-      metric_predictabilityScore: 'Vorhersagbarkeit'
+      metric_predictabilityScore: 'Vorhersagbarkeit',
+      priceDataWarning: 'Für einen Teil des Analysezeitraums waren keine ETF-Preisdaten verfügbar. Für die Berechnung wurde der nächstgelegene verfügbare Kurs vom {date} verwendet.'
     }
   ,
   sections: {
@@ -294,7 +295,8 @@ const translations = {
       metric_avgDeemedEtfPct: 'Avg Deemed / ETF Price %',
       metric_maxDeemedDiff: 'Max Deemed Income Diff',
       metric_maxSwingAvgPrice: 'Max Swing / Avg Price',
-      metric_predictabilityScore: 'Predictability Score'
+      metric_predictabilityScore: 'Predictability Score',
+      priceDataWarning: 'ETF price history was unavailable for part of the analysis period. The calculation uses the nearest available quote from {date}.'
     }
   ,
   sections: {
@@ -327,14 +329,6 @@ export function setLocale(locale) {
 export function getLocale() { return current; }
 
 export default translations;
-
-
-
-
-
-
-
-
 
 
 

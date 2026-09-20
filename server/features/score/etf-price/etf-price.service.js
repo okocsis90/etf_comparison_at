@@ -148,6 +148,26 @@ class EtfPriceService {
     }
 
     /**
+     * Gets the earliest available historical price for an ETF.
+     * Used when an analysis starts before the ticker's inception.
+     * @param {string} isin
+     * @returns {Promise<{isin: string, ticker: string, currency: string|null, requestDate: Date, resultDate: Date, price: number}>}
+     */
+    async getEarliestAvailablePrice(isin) {
+        return this._getAvailableHistoricalPrice(isin, 'earliest');
+    }
+
+    /**
+     * Gets the latest available historical price on or before a date.
+     * @param {string} isin
+     * @param {Date|string} date
+     * @returns {Promise<{isin: string, ticker: string, currency: string|null, requestDate: Date, resultDate: Date, price: number}>}
+     */
+    async getLatestAvailablePriceBefore(isin, date) {
+        return this._getAvailableHistoricalPrice(isin, 'latest', new Date(date));
+    }
+
+    /**
      * Returns the resolved ticker and display name for an ISIN.
      * Checks in-memory cache → SQLite → Yahoo Finance, in that order.
      * @param {string} isin
@@ -281,6 +301,51 @@ class EtfPriceService {
             price: priceData.close,
             date: priceData.date,
             currency
+        };
+    }
+
+    async _getAvailableHistoricalPrice(isin, mode, targetDate = new Date()) {
+        if (!isin) throw new Error('isin is required');
+
+        const ticker = await this._searchTickerByIsin(isin);
+        if (!ticker) {
+            throw new Error(`Could not find ticker symbol for ISIN: ${isin}`);
+        }
+
+        const period1 = new Date('1970-01-01T00:00:00.000Z');
+        const period2 = new Date(targetDate);
+        period2.setDate(period2.getDate() + 1);
+        const chart = await this.yahooFinance.chart(ticker, {
+            period1,
+            period2,
+            interval: '1d'
+        });
+
+        const priceData = mode === 'earliest'
+            ? chart?.quotes?.find(quote => Number.isFinite(quote.close) && quote.close > 0)
+            : this._findBestPriceData(chart?.quotes, targetDate);
+
+        if (!priceData) {
+            throw new NoPriceDataError(
+                `No historical price data available for ${ticker}`,
+                { ticker, date: targetDate }
+            );
+        }
+
+        const resultDate = new Date(priceData.date);
+        const price = priceData.close;
+        const currency = chart.meta?.currency ?? null;
+        logger.warn(
+            `Using ${mode} available price for ${ticker} on ${resultDate.toISOString().split('T')[0]}: ${price} ${currency ?? 'unknown currency'}`
+        );
+
+        return {
+            isin,
+            ticker,
+            currency,
+            requestDate: targetDate,
+            resultDate,
+            price
         };
     }
 
