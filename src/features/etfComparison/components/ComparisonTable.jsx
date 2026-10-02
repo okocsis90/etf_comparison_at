@@ -38,14 +38,14 @@ const SECTIONS = (t) => [
           get: (d) => d.avgDeemedIncomeToEtfPricePercent,
           format: pct,
           lowerIsBetter: true,
-          tooltip: t('etfScore.predictability_tooltip'),
+          tooltip: t('etfScore.avgDeemedEtfPct_tooltip'),
         },
         {
           label: t('etfScore.metric_predictabilityScore'),
           get: (d) => d.taxEfficiencyScoreBreakdown.consistency.score,
           format: (v) => `${v} / 100`,
           higherIsBetter: true,
-          tooltip: t('comparison.predictability_tooltip'),
+          tooltip: t('etfScore.predictability_tooltip'),
         },
     ],
   },
@@ -75,7 +75,7 @@ const SECTIONS = (t) => [
           get: (d) => d.deemedGains,
           format: eur,
           lowerIsBetter: true,
-          tooltip: t('scoreDialog.taxBurden_explain'),
+          tooltip: t('etfScore.totalDeemed_tooltip'),
         },
         {
           label: t('etfScore.metric_deemedToTotal'),
@@ -89,7 +89,7 @@ const SECTIONS = (t) => [
           get: (d) => d.avgDeemedIncomeEur,
           format: eur,
           lowerIsBetter: true,
-          tooltip: t('scoreDialog.taxBurden_explain'),
+          tooltip: t('etfScore.avgDeemedPerYear_tooltip'),
         },
         {
           label: t('etfScore.metric_avgDeemedToCurrent'),
@@ -258,4 +258,3 @@ export default function ComparisonTable({ results }) {
     </TableContainer>
   );
 }
-

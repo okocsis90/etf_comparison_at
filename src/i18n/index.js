@@ -90,7 +90,7 @@ const translations = {
       context1: 'In Österreich müssen Sie bei thesaurierenden ETFs ("Meldefonds") jährlich KESt (27,5 %) auf ausschüttungsgleiche Erträge zahlen — auch wenn Sie nie verkaufen. Dieser Score misst die Höhe dieser jährlichen Steuerbelastung und wie gut Sie dafür planen können. Höher ist besser.',
       cvVsMaxSwing: 'Die Vorhersage-Komponente der Note verwendet den Variationskoeffizienten (CV), um typische, relative Jahr-zu-Jahr-Variabilität um den Mittelwert zu erfassen. Zusätzlich zeigen wir unter «Konsistenzmetriken» die Kennzahl „Maximaler Ausschlag“; der maximale Ausschlag berichtet den schlimmsten absoluten Jahr-zu-Jahr-Sprung, ist aber nicht direkt Teil der numerischen Note. Zusammen zeigen sie typische Streuung (CV) und Extrembewegungen (maximaler Ausschlag).',
       taxBurden_example: 'Ihr Wert: durchschnittlicher ausschüttungsgleicher Ertrag / ETF-Preis = {pct} % pro Jahr',
-      taxBurden_explain: 'Der jährliche ausschüttungsgleiche Ertrag als Prozentsatz Ihres ETF-Preises ist die direkteste Messgröße für die jährlichen Steuerverpflichtung. Beispiel: 0,2 % bedeutet etwa 0,2 % × 27,5 % ≈ 0,055 % Kosten pro Jahr.',
+      taxBurden_explain: 'Der jährliche ausschüttungsgleiche Ertrag als Prozentsatz Ihres ETF-Preises ist die direkteste Messgröße für die jährliche Steuerverpflichtung. Beispiel: 0,2 % bedeutet etwa 0,2 % × 27,5 % ≈ 0,055 % Kosten pro Jahr.',
       taxBurden_formula: 'score = max(0, 100 × (1 − avg% / 3))',
       taxBurden_plain: 'Kurz gesagt: wir skalieren den durchschnittlichen jährlichen Prozentsatz auf 0–100, wobei 0 % → 100 und 3 % → 0.',
       cv_label: 'Variationskoeffizient (CV):',
@@ -114,11 +114,10 @@ const translations = {
     comparison: {
       metric_label: 'Metrik',
       reports_tooltip: 'Anzahl verfügbarer Jahresberichte. Mehr Berichte = zuverlässigere Analyse.',
-      maxSwing_tooltip: 'Worst-case Jahr-zu-Jahr-Schwankung der ausschüttungsgleichen Erträge als Prozentsatz des durchschnittlichen ETF-Preises.',
-      cv_tooltip: 'Variationskoeffizient (CV) = Standardabweichung ÷ Mittelwert der jährlichen Verhältniswerte. Kleiner = stabiler. Bei zu kleinem Mittelwert oder <2 Berichten ist CV nicht verfügbar; verwenden Sie "Maximaler Ausschlag" für Worst-Case-Sprünge.',
+      maxSwing_tooltip: 'Größte Differenz zwischen den ausschüttungsgleichen Erträgen zweier Berichte, geteilt durch den durchschnittlichen ETF-Preis an den Berichtstagen. Sie zeigt die größte beobachtete Schwankungsbreite, nicht nur Änderungen zwischen aufeinanderfolgenden Jahren.',
+      cv_tooltip: 'Variationskoeffizient (CV) = Standardabweichung ÷ Mittelwert der jährlichen Verhältniswerte (ausschüttungsgleiche Erträge / ETF-Preis). Ein kleinerer CV bedeutet stabilere Werte. Bei zu kleinem Mittelwert oder weniger als 2 Berichten ist der CV nicht verfügbar; der maximale Ausschlag zeigt stattdessen die größte beobachtete Schwankungsbreite.',
       metric_overallScore: 'Gesamt-Score',
       overallScore_tooltip: 'Gesamtbewertung der Steuereffizienz (0–100). Kombiniert Steuerbelastung, Vorhersagbarkeit und Anteil ausschüttungsgleicher Erträge. Höher ist besser.',
-      predictability_tooltip: 'Wie vorhersagbar die jährlichen ausschüttungsgleichen Erträge sind. Berechnet aus dem Variationskoeffizienten (CV = stddev / mean) der jährlichen ausschüttungsgleichen/Preis-Verhältnisse und auf 0–100 skaliert (höher = stabiler). CV kann bei zu kleinem Mittelwert oder <2 Berichten nicht verfügbar sein; in diesem Fall wird ein neutraler Wert gezeigt.',
       metric_reportsAvailable: 'Verfügbare Berichte',
     },
     etfScore: {
@@ -127,7 +126,11 @@ const translations = {
       periodEnd_tooltip: 'ETF-Preis am Ende des letzten Geschäftsjahres (laut OeKB-Steuerbericht), in EUR',
       totalGains_tooltip: 'Preiszuwachs über den Analysezeitraum in EUR. Die Daten stammen aus OeKB-Steuerberichten.',
       avgDeemedToCurrent_tooltip: 'Durchschnittlicher jährlicher ausschüttungsgleicher Ertrag als Prozentsatz des aktuellen ETF-Preises — nützlich zum Vergleich der laufenden Steuerbelastung zwischen ETFs.',
-      predictability_tooltip: 'Misst, wie stabil der jährliche ausschüttungsgleiche Ertrag relativ zu seinem Mittelwert ist. CV wird berechnet und auf 0–100 skaliert (höher = stabiler). CV ist nicht verfügbar bei zu kleinem Mittelwert oder <2 Berichten.',
+      totalDeemed_tooltip: 'Summe aller ausschüttungsgleichen Erträge aus den Jahresberichten im Analysezeitraum, in EUR.',
+      avgDeemedPerYear_tooltip: 'Durchschnittlicher ausschüttungsgleicher Ertrag je Jahresbericht im Analysezeitraum, in EUR.',
+      avgDeemedEtfPct_tooltip: 'Durchschnitt der jährlichen ausschüttungsgleichen Erträge geteilt durch den jeweiligen ETF-Preis am Berichtstag. Dieser Prozentwert misst die Steuerbelastung; er ist kein Stabilitäts- oder Vorhersagbarkeitswert.',
+      maxDeemedDiff_tooltip: 'Größte Differenz der ausschüttungsgleichen Erträge zwischen zwei Jahresberichten, in EUR. Dies ist ein absoluter Betrag und nicht der prozentuale maximale Ausschlag.',
+      predictability_tooltip: 'Vorhersagbarkeitswert (0–100), berechnet aus dem Variationskoeffizienten (CV) der jährlichen ausschüttungsgleichen Erträge/ETF-Preis-Verhältnisse. Höher bedeutet stabilere Werte. Bei weniger als 2 Berichten oder nicht berechenbarem CV wird neutral mit 50 bewertet.',
       section_priceOverview: 'Preisübersicht',
       section_deemedIncome: 'Ausschüttungsgleiche Erträge',
       section_consistency: 'Konsistenzmetriken',
@@ -267,11 +270,10 @@ const translations = {
     comparison: {
       metric_label: 'Metric',
       reports_tooltip: 'Number of yearly reports available. More reports = more reliable analysis.',
-      maxSwing_tooltip: 'Worst-case year-to-year swing in deemed income as % of average ETF price.',
-      cv_tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed/price ratios. Lower = more stable. CV is undefined when the mean is too small relative to the data or when there are fewer than 2 reports; use Max Swing for worst-case jumps.',
+      maxSwing_tooltip: 'The largest difference in deemed income between any two reports, divided by the average ETF price on report dates. It shows the widest observed range, not just changes between consecutive years.',
+      cv_tooltip: 'Coefficient of Variation (CV) = standard deviation ÷ mean of yearly deemed income / ETF price ratios. A lower CV means more stable values. CV is unavailable when the mean is too small or there are fewer than 2 reports; Max Swing instead shows the widest observed range.',
       metric_overallScore: 'Overall Score',
       overallScore_tooltip: 'Composite tax efficiency score (0–100). Combines tax burden, predictability, and the share of deemed vs total gains. Higher is better.',
-      predictability_tooltip: 'How predictable the annual deemed income is. Computed from the Coefficient of Variation (CV = stddev / mean) of yearly deemed/price ratios and mapped to 0–100 (higher = more predictable). CV may be unavailable when the mean is too small or when there are fewer than 2 reports; in such cases a neutral predictability is shown.',
       metric_reportsAvailable: 'Reports Available',
     },
     etfScore: {
@@ -280,7 +282,11 @@ const translations = {
       periodEnd_tooltip: 'ETF price at the end of the last business year (as reported in the OeKB fund tax report), in EUR',
       totalGains_tooltip: 'Price appreciation over the analysis period in EUR. Dates come from the OeKB fund tax reports.',
       avgDeemedToCurrent_tooltip: 'Average yearly deemed income as a percentage of the current ETF price — useful for comparing the ongoing annual tax burden between ETFs.',
-      predictability_tooltip: 'Measures how stable the annual deemed income is relative to its average. We compute the Coefficient of Variation (CV = stddev / mean) and map it to 0–100 (higher = more predictable). CV can be unavailable for too-small means or <2 reports.',
+      totalDeemed_tooltip: 'The sum of all deemed income amounts from yearly reports in the analysis period, in EUR.',
+      avgDeemedPerYear_tooltip: 'The average deemed income per yearly report in the analysis period, in EUR.',
+      avgDeemedEtfPct_tooltip: 'The average of each year’s deemed income divided by that report’s ETF price. This percentage measures tax burden; it is not a stability or predictability measure.',
+      maxDeemedDiff_tooltip: 'The largest difference in deemed income between any two yearly reports, in EUR. This is an absolute amount, not the percentage Max Swing.',
+      predictability_tooltip: 'Predictability score (0–100), based on the Coefficient of Variation (CV) of yearly deemed income / ETF price ratios. Higher means more stable values. When there are fewer than 2 reports or CV cannot be calculated, a neutral score of 50 is used.',
       section_priceOverview: 'Price Overview',
       section_deemedIncome: 'Deemed Income',
       section_consistency: 'Consistency Metrics',
@@ -329,8 +335,6 @@ export function setLocale(locale) {
 export function getLocale() { return current; }
 
 export default translations;
-
-
 
 
 

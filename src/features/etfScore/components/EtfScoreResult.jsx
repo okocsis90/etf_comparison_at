@@ -106,7 +106,7 @@ export default function EtfScoreResult({ data }) {
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_totalDeemedGains')} value={eur(data.deemedGains)} color="#e65100"
-            tooltip={t('scoreDialog.taxBurden_explain')} />
+            tooltip={t('etfScore.totalDeemed_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_deemedToTotal')} value={pct(data.deemedGainsToTotalGainsPercent)} color="#e65100"
@@ -114,7 +114,7 @@ export default function EtfScoreResult({ data }) {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_avgDeemedPerYear')} value={eur(data.avgDeemedIncomeEur)} color="#f57c00"
-            tooltip={t('scoreDialog.taxBurden_explain')} />
+            tooltip={t('etfScore.avgDeemedPerYear_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_avgDeemedToCurrent')} value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
@@ -129,11 +129,11 @@ export default function EtfScoreResult({ data }) {
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_avgDeemedEtfPct')} value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
-            tooltip={t('etfScore.predictability_tooltip')} />
+            tooltip={t('etfScore.avgDeemedEtfPct_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_maxDeemedDiff')} value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
-            tooltip={t('comparison.maxSwing_tooltip')} />
+            tooltip={t('etfScore.maxDeemedDiff_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_maxSwingAvgPrice')} value={pct(data.maxDiffToAvgEtfPricePercent)} color="#d32f2f"
