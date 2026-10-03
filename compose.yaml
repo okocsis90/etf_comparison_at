@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-etf_comparison}
       POSTGRES_USER: ${POSTGRES_USER:-etf_app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etf_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
     ports:
       - "${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -21,7 +21,7 @@ services:
     environment:
       FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-etf_comparison}
       FLYWAY_USER: ${POSTGRES_USER:-etf_app}
-      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-etf_dev_password}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
       FLYWAY_BASELINE_ON_MIGRATE: "false"
     volumes:
       - ./server/db/migration:/flyway/sql:ro
@@ -30,6 +30,7 @@ services:
         condition: service_healthy
 
   backend:
+    image: etf-comparison-backend:local
     build:
       context: ./server
     environment:
@@ -38,7 +39,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-etf_comparison}
       DB_USER: ${POSTGRES_USER:-etf_app}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-etf_dev_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
       DATABASE_SSL: "false"
     expose:
       - "3001"
@@ -53,6 +54,7 @@ services:
         condition: service_completed_successfully
 
   frontend:
+    image: etf-comparison-frontend:local
     build:
       context: .
     ports:
