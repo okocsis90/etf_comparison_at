@@ -9,6 +9,7 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const sqlitePath = path.resolve(
     process.argv[2] || process.env.SQLITE_PATH || path.join(scriptDirectory, '..', 'data', 'etf-cache.db')
 );
+const onlyIfEmpty = process.argv.includes('--only-if-empty');
 const tables = [
     {
         name: 'oekb_reports',
@@ -36,10 +37,24 @@ const tables = [
 ];
 
 async function importCache() {
-    const sqlite = new Database(sqlitePath, { readonly: true, fileMustExist: true });
     const pool = getDb();
+    let sqlite;
 
     try {
+        if (onlyIfEmpty) {
+            const { rows } = await pool.query(`
+                SELECT EXISTS (SELECT 1 FROM oekb_reports)
+                    OR EXISTS (SELECT 1 FROM etf_prices)
+                    OR EXISTS (SELECT 1 FROM exchange_rates)
+                    OR EXISTS (SELECT 1 FROM etf_info) AS has_cached_rows
+            `);
+            if (rows[0].has_cached_rows) {
+                console.log('PostgreSQL cache already contains data; skipping optional SQLite import');
+                return;
+            }
+        }
+
+        sqlite = new Database(sqlitePath, { readonly: true, fileMustExist: true });
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -63,7 +78,7 @@ async function importCache() {
             client.release();
         }
     } finally {
-        sqlite.close();
+        sqlite?.close();
         await closeDb();
     }
 }

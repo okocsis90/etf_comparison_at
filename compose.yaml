@@ -41,6 +41,9 @@ services:
       DB_USER: ${POSTGRES_USER:-etf_app}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
       DATABASE_SSL: "false"
+      SQLITE_PATH: ${SQLITE_PATH:-/data/etf-cache.db}
+    volumes:
+      - ./server/data:/data:ro
     expose:
       - "3001"
     healthcheck:

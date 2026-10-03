@@ -38,27 +38,11 @@ Database files live in the named Docker volume `postgres_data`, not in the conta
 
 To share a locally runnable package, provide the project files, including `compose.yaml`, both Dockerfiles, `nginx.conf`, and `server/db/migration/`. The recipient needs Docker Desktop and creates their own `.env` from `.env.example`, then runs the same `docker compose up --build -d` command. Do not share your `.env`. This local setup builds the images on each recipient's machine; publishing prebuilt images can be added later.
 
-## Import the existing SQLite cache
+## Optional SQLite cache data
 
-The repository's SQLite cache is ignored by git and must be present at `server/data/etf-cache.db` on the machine running the import. Start PostgreSQL and apply migrations first:
+The application works with an empty cache by default; no data file is needed in Git or in a deployment package. If you have an existing SQLite cache to seed the PostgreSQL database, place it at `server/data/etf-cache.db` on the machine where Compose runs. The `server/data/` directory is Git-ignored and mounted read-only into the API container.
 
-```sh
-docker compose up -d postgres
-docker compose run --rm migrate
-```
-
-Then run the one-time importer from the repository root, using the PostgreSQL credentials from `.env`:
-
-```powershell
-$env:DB_HOST = 'localhost'
-$env:DB_PORT = '5432'
-$env:DB_NAME = 'etf_comparison'
-$env:DB_USER = 'etf_app'
-$env:DB_PASSWORD = 'your-password'
-npm.cmd --prefix server run import:sqlite
-```
-
-The import is transactional and repeatable: existing PostgreSQL rows are left unchanged. It imports reports, historical prices, exchange rates, and ETF metadata. Afterward, start the complete application with `docker compose up --build -d`.
+On API startup, the SQLite cache is imported only if that file exists and the PostgreSQL cache is empty. If the file is absent, startup continues with an empty PostgreSQL cache and the application fetches data as needed. If PostgreSQL already has cached rows, the optional import is skipped without opening the SQLite file. Imported data lives in the persistent PostgreSQL volume, so the source file is not needed after a successful import. The import is transactional and does not overwrite existing rows.
 
 ## Local development
 
