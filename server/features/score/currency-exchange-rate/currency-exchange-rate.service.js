@@ -71,7 +71,7 @@ class CurrencyExchangeRateService {
             };
         }
 
-        const cached = this.repository.find(cur, targetDate);
+        const cached = await this.repository.find(cur, targetDate);
         if (cached) {
             return {
                 requestDate: cached.requestDate,
@@ -116,8 +116,8 @@ class CurrencyExchangeRateService {
      * Saves a fetched result to the repository and returns it.
      * @private
      */
-    _saveAndReturn(result, requestDate) {
-        this.repository.save(
+    async _saveAndReturn(result, requestDate) {
+        await this.repository.save(
             result.currency,
             requestDate,
             new Date(result.resultDate),

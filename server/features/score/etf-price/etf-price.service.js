@@ -23,7 +23,7 @@ export class NoPriceDataError extends Error {
  * ETF price service.
  *
  * Fetches historical and current ETF prices via Yahoo Finance, with a persistent
- * SQLite cache for historical prices (past prices are immutable so they never expire).
+ * PostgreSQL cache for historical prices (past prices are immutable so they never expire).
  *
  * Ticker resolution strategy:
  *   When given an ISIN, the service searches Yahoo Finance and prefers tickers
@@ -73,7 +73,7 @@ class EtfPriceService {
             throw new Error(`Invalid date provided: ${date}`);
         }
 
-        const cached = this.repository.find(isin, targetDate);
+        const cached = await this.repository.find(isin, targetDate);
         if (cached) {
             return {
                 isin,
@@ -101,7 +101,7 @@ class EtfPriceService {
 
             const result = await this._fetchChartPrice(ticker, targetDate, startDate, endDate);
 
-            this.repository.save(isin, targetDate, result.date, result.price, result.currency, ticker);
+            await this.repository.save(isin, targetDate, result.date, result.price, result.currency, ticker);
 
             return {
                 isin,
@@ -169,7 +169,7 @@ class EtfPriceService {
 
     /**
      * Returns the resolved ticker and display name for an ISIN.
-     * Checks in-memory cache → SQLite → Yahoo Finance, in that order.
+     * Checks in-memory cache → PostgreSQL → Yahoo Finance, in that order.
      * @param {string} isin
      * @returns {Promise<{ticker: string, name: string} | null>}
      */
@@ -178,7 +178,7 @@ class EtfPriceService {
             return this._etfInfoCache.get(isin);
         }
 
-        const cached = this.infoRepository.find(isin);
+        const cached = await this.infoRepository.find(isin);
         if (cached) {
             this._etfInfoCache.set(isin, cached);
             return cached;
@@ -237,7 +237,7 @@ class EtfPriceService {
 
         const info = { ticker, name };
         this._etfInfoCache.set(isin, info);
-        this.infoRepository.save(isin, ticker, name);
+        await this.infoRepository.save(isin, ticker, name);
 
         return info;
     }

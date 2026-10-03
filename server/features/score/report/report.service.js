@@ -21,7 +21,7 @@ class ReportService {
    */
   async getReportResult(isin) {
     if (!isin) throw new Error('isin is required');
-    const cached = this.repository.findFresh(isin);
+    const cached = await this.repository.findFresh(isin);
     if (cached) {
       logger.info(`Returning cached OeKB reports for ${isin}`);
       return cached;
@@ -32,7 +32,7 @@ class ReportService {
     try {
       await scraper.launchBrowser();
       const result = await scraper.scrape();
-      this.repository.save(result);
+      await this.repository.save(result);
       return result;
     } finally {
       await scraper.close();

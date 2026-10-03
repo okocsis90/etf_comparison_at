@@ -1,25 +1,14 @@
 # ETF Comparison Backend
 
-This is a simple Node.js backend for scraping and caching ETF report data by ISIN.
+Node.js API for ETF reports, prices, and Austrian tax-efficiency scores. Persistent cached data is stored in PostgreSQL; Flyway owns all schema migrations in `db/migration`.
 
-## Features
-- API endpoint: `/api/score?isin=...`
-- Uses Puppeteer to fetch and parse the report page
+Use Docker Compose from the repository root for the complete application. The backend requires PostgreSQL and an already migrated schema. For local development, configure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` (or `DATABASE_URL`), then run:
 
-## Usage
+```sh
+npm install
+npm start
+```
 
-1. Install dependencies:
-   ```sh
-   cd server
-   npm install
-   ```
-2. Start the server:
-   ```sh
-   npm start
-   ```
-3. Query the API from your frontend:
-   ```sh
-   curl "http://localhost:3001/api/score?isin=IE00BK5BQX27"
-   ```
----
-**Note:** Puppeteer will download Chromium on first install. If you deploy, ensure your environment supports headless browsers.
+The score endpoint is `/api/score?isin=IE00BK5BQX27`; `/health` checks database connectivity.
+
+To migrate the existing ignored SQLite cache, start PostgreSQL and run Flyway first, then set `DATABASE_URL` and execute `npm run import:sqlite`. The importer defaults to `data/etf-cache.db` and accepts an alternate SQLite path as its first argument.

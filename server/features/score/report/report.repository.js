@@ -1,5 +1,6 @@
 import getDb from '../../../shared/db/database.js';
 import logger from '../../../shared/logger.js';
+import { toDateKey } from '../../../shared/utils.js';
 import ReportResult from './report-result.js';
 
 /**
@@ -22,18 +23,23 @@ class ReportRepository {
      * @param {string} isin
      * @returns {ReportResult|null}
      */
-    findFresh(isin) {
+    async findFresh(isin) {
         if (!isin) throw new Error('isin is required');
-        if (this._isFetchAllowed(isin)) return null;
+        if (await this._isFetchAllowed(isin)) return null;
 
-        const rows = getDb()
-            .prepare(`
-                SELECT *
+        const { rows } = await getDb().query(`
+                SELECT isin,
+                       currency,
+                       TO_CHAR(date, 'DD.MM.YYYY') AS date,
+                       deemed_income,
+                       TO_CHAR(business_year_start, 'DD.MM.YYYY') AS business_year_start,
+                       TO_CHAR(business_year_end, 'DD.MM.YYYY') AS business_year_end,
+                       fetched_at,
+                       next_fetch_allowed_at
                 FROM   oekb_reports
-                WHERE  isin = ?
+                WHERE  isin = $1
                 ORDER  BY business_year_start ASC
-            `)
-            .all(isin);
+            `, [isin]);
 
         if (rows.length === 0) return null;
 
@@ -56,7 +62,7 @@ class ReportRepository {
      * Calculates and stores the next allowed fetch date automatically.
      * @param {ReportResult} reportResult
      */
-    save(reportResult) {
+    async save(reportResult) {
         const { isin, currency, reports } = reportResult;
         if (!isin) throw new Error('isin is required');
         if (!reports || reports.length === 0) return;
@@ -64,32 +70,34 @@ class ReportRepository {
         const fetchedAt = new Date().toISOString();
         const nextFetchAllowedAt = _calculateNextFetchDate(reports).toISOString();
 
-        const db = getDb();
-        const deleteOld = db.prepare('DELETE FROM oekb_reports WHERE isin = ?');
-        const insert = db.prepare(`
-            INSERT OR REPLACE INTO oekb_reports
+        const client = await getDb().connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('DELETE FROM oekb_reports WHERE isin = $1', [isin]);
+            for (const report of reports) {
+                await client.query(`
+            INSERT INTO oekb_reports
                 (isin, currency, date, deemed_income, business_year_start, business_year_end,
                  fetched_at, next_fetch_allowed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        const saveAll = db.transaction(() => {
-            deleteOld.run(isin);
-            for (const report of reports) {
-                insert.run(
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
                     isin,
                     currency,
-                    report.date,
+                    toDateKey(report.date),
                     report.deemedIncome,
-                    report.businessYearStart,
-                    report.businessYearEnd,
+                    toDateKey(report.businessYearStart),
+                    toDateKey(report.businessYearEnd),
                     fetchedAt,
                     nextFetchAllowedAt
-                );
+                ]);
             }
-        });
-
-        saveAll();
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
         logger.info(`Cached ${reports.length} OeKB reports for ${isin}. Next fetch allowed at ${nextFetchAllowedAt}`);
     }
 
@@ -103,15 +111,14 @@ class ReportRepository {
      * @returns {boolean}
      * @private
      */
-    _isFetchAllowed(isin) {
-        const row = getDb()
-            .prepare(`
+    async _isFetchAllowed(isin) {
+        const { rows } = await getDb().query(`
                 SELECT next_fetch_allowed_at
                 FROM   oekb_reports
-                WHERE  isin = ?
+                WHERE  isin = $1
                 LIMIT  1
-            `)
-            .get(isin);
+            `, [isin]);
+        const row = rows[0];
 
         if (!row) return true;
 

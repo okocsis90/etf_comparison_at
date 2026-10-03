@@ -35,6 +35,15 @@ jest.unstable_mockModule('./etf-price.repository.js', () => ({
     default: jest.fn(() => mockEtfPriceRepository)
 }));
 
+const mockEtfInfoRepository = {
+    find: jest.fn().mockReturnValue(null),
+    save: jest.fn()
+};
+
+jest.unstable_mockModule('./etf-info.repository.js', () => ({
+    default: jest.fn(() => mockEtfInfoRepository)
+}));
+
 // Now import the service after mocks are set up
 const { default: EtfPriceService } = await import('./etf-price.service.js');
 

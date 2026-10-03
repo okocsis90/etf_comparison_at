@@ -68,9 +68,10 @@ describe('ReportScraper', () => {
 
             await scraper.launchBrowser();
 
-            expect(mockPuppeteer.launch).toHaveBeenCalledWith({
+            expect(mockPuppeteer.launch).toHaveBeenCalledWith(expect.objectContaining({
                 headless: true,
-            });
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            }));
             expect(scraper.browser).toBe(mockBrowser);
             expect(scraper.reportPage).not.toBeNull();
         });

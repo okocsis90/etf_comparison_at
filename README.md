@@ -1,51 +1,43 @@
-# ETF Score Calculator
+# ETF Comparison AT
 
-This is a React + Vite application for calculating ETF scores by ISIN.
+ETF tax analysis application for Austrian investors. The frontend, API, PostgreSQL database, and schema migrations run as Docker Compose services.
 
-## Getting Started
+## Run the containerized application
 
-### 1. Install dependencies
+1. Copy `.env.example` to `.env` and set a strong `POSTGRES_PASSWORD`.
+2. Start the services:
 
+   ```sh
+   docker compose up --build -d
+   ```
+3. Open `http://localhost:8080` (or the configured `APP_PORT`).
+
+Flyway applies SQL migrations before the API starts. PostgreSQL data persists in the `postgres_data` Docker volume. Back up this volume or the database before removing it.
+
+PostgreSQL is published on loopback by default. To let applications on other hosts connect, set `POSTGRES_BIND_ADDRESS` to an externally reachable interface and restrict access with a firewall; configure those clients with the same database credentials and schema.
+
+## Import the existing SQLite cache
+
+The repository's SQLite cache is ignored by git and must be present at `server/data/etf-cache.db` on the machine running the import. Start PostgreSQL and apply migrations first:
+
+```sh
+docker compose up -d postgres
+docker compose run --rm migrate
 ```
-npm install
+
+Then run the one-time importer from the repository root, using the PostgreSQL credentials from `.env`:
+
+```powershell
+$env:DB_HOST = 'localhost'
+$env:DB_PORT = '5432'
+$env:DB_NAME = 'etf_comparison'
+$env:DB_USER = 'etf_app'
+$env:DB_PASSWORD = 'your-password'
+npm.cmd --prefix server run import:sqlite
 ```
 
-### 2. Start the development server
+The import is transactional and repeatable: existing PostgreSQL rows are left unchanged. It imports reports, historical prices, exchange rates, and ETF metadata. Afterward, start the complete application with `docker compose up --build -d`.
 
-```
-npm run dev
-```
+## Local development
 
-The app will be available at the local URL shown in the terminal (usually http://localhost:5173).
-
-### 3. Build for production
-
-```
-npm run build
-```
-
-## Project Structure
-
-- `src/` — Application source code
-- `public/` — Static assets
-- `vite.config.js` — Vite configuration
-- `package.json` — Project metadata and scripts
-
----
-
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The Vite frontend runs with `npm run dev` from the repository root and proxies `/api` to `http://localhost:3001`. Run PostgreSQL and Flyway as above, then start the backend from `server` with `npm start`. Configure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`, or provide `DATABASE_URL`.

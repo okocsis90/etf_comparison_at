@@ -13,12 +13,20 @@ class ExchangeRateRepository {
      * @param {Date} requestDate - The date for which the rate was fetched
      * @returns {{currency: string, date: string, exchangeRateCurrencyToEur: number}|null}
      */
-    find(currency, requestDate) {
+    async find(currency, requestDate) {
         if (!currency) throw new Error('currency is required');
         const dateKey = toDateKey(requestDate);
-        const row = getDb()
-            .prepare('SELECT * FROM exchange_rates WHERE currency = ? AND request_date = ?')
-            .get(currency.toUpperCase(), dateKey);
+        const { rows } = await getDb().query(
+            `SELECT currency,
+                    TO_CHAR(request_date, 'YYYY-MM-DD') AS request_date,
+                    TO_CHAR(result_date, 'YYYY-MM-DD') AS result_date,
+                    exchange_rate_currency_to_eur,
+                    fetched_at
+             FROM exchange_rates
+             WHERE currency = $1 AND request_date = $2`,
+            [currency.toUpperCase(), dateKey]
+        );
+        const row = rows[0];
 
         if (!row) return null;
 
@@ -38,17 +46,19 @@ class ExchangeRateRepository {
      * @param {Date} resultDate  - The date the rate actually corresponds to
      * @param {number} exchangeRateCurrencyToEur
      */
-    save(currency, requestDate, resultDate, exchangeRateCurrencyToEur) {
+    async save(currency, requestDate, resultDate, exchangeRateCurrencyToEur) {
         if (!currency) throw new Error('currency is required');
         const requestDateKey = toDateKey(requestDate);
         const resultDateKey = toDateKey(resultDate);
-        getDb()
-            .prepare(`
-                INSERT OR REPLACE INTO exchange_rates
+        await getDb().query(`
+                INSERT INTO exchange_rates
                     (currency, request_date, result_date, exchange_rate_currency_to_eur, fetched_at)
-                VALUES (?, ?, ?, ?, ?)
-            `)
-            .run(currency.toUpperCase(), requestDateKey, resultDateKey, exchangeRateCurrencyToEur, new Date().toISOString());
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (currency, request_date) DO UPDATE SET
+                    result_date = EXCLUDED.result_date,
+                    exchange_rate_currency_to_eur = EXCLUDED.exchange_rate_currency_to_eur,
+                    fetched_at = EXCLUDED.fetched_at
+            `, [currency.toUpperCase(), requestDateKey, resultDateKey, exchangeRateCurrencyToEur, new Date().toISOString()]);
 
         logger.info(`Cached exchange rate ${currency} on ${requestDateKey}: ${exchangeRateCurrencyToEur}`);
     }

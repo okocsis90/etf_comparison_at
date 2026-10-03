@@ -10,6 +10,31 @@ export function delay(ms) {
  * @throws {Error} if the value cannot be parsed into a valid date
  */
 export function toDateKey(date) {
+  if (typeof date === 'string') {
+    const value = date.trim();
+    const germanDate = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+    if (germanDate) {
+      const [, day, month, year] = germanDate;
+      const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+      if (
+        parsed.getUTCFullYear() !== Number(year) ||
+        parsed.getUTCMonth() !== Number(month) - 1 ||
+        parsed.getUTCDate() !== Number(day)
+      ) {
+        throw new Error(`Cannot convert to date key: invalid date value "${date}"`);
+      }
+      return `${year}-${month}-${day}`;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const parsed = new Date(value);
+      if (isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+        throw new Error(`Cannot convert to date key: invalid date value "${date}"`);
+      }
+      return value;
+    }
+  }
+
   const d = new Date(date);
   if (isNaN(d.getTime())) {
     throw new Error(`Cannot convert to date key: invalid date value "${date}"`);
@@ -44,4 +69,3 @@ export function parseGermanDate(dateStr) {
 
   return date;
 }
-

@@ -1,3 +1,4 @@
+/* global process */
 import puppeteer from 'puppeteer';
 import ReportPage from './report-page.js';
 import { delay } from '../../../shared/utils.js';
@@ -27,8 +28,10 @@ class ReportScraper {
 
     async launchBrowser() {
         this.browser = await puppeteer.launch({
-            executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            headless: true
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
+                || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await this.browser.newPage();
         this.reportPage = new ReportPage(page, this.isin);
@@ -137,5 +140,4 @@ class ReportScraper {
 }
 
 export default ReportScraper;
-
 

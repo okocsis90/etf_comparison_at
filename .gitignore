@@ -16,8 +16,11 @@ dist-ssr
 coverage
 *.lcov
 
-# SQLite database
+# Local SQLite cache (used only for one-time PostgreSQL import)
 server/data/
+
+# Local environment configuration
+.env
 
 # Editor directories and files
 .vscode/*

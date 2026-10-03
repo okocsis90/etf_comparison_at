@@ -13,10 +13,12 @@ class EtfInfoRepository {
    * @param {string} isin
    * @returns {{ ticker: string, name: string } | null}
    */
-  find(isin) {
-    const row = getDb()
-      .prepare('SELECT ticker, name, fetched_at FROM etf_info WHERE isin = ?')
-      .get(isin);
+  async find(isin) {
+    const { rows } = await getDb().query(
+      'SELECT ticker, name, fetched_at FROM etf_info WHERE isin = $1',
+      [isin]
+    );
+    const row = rows[0];
 
     if (!row) return null;
 
@@ -39,17 +41,18 @@ class EtfInfoRepository {
    * @param {string} ticker
    * @param {string} name
    */
-  save(isin, ticker, name) {
-    getDb()
-      .prepare(`
-        INSERT OR REPLACE INTO etf_info (isin, ticker, name, fetched_at)
-        VALUES (?, ?, ?, ?)
-      `)
-      .run(isin, ticker, name, new Date().toISOString());
+  async save(isin, ticker, name) {
+    await getDb().query(`
+        INSERT INTO etf_info (isin, ticker, name, fetched_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (isin) DO UPDATE SET
+          ticker = EXCLUDED.ticker,
+          name = EXCLUDED.name,
+          fetched_at = EXCLUDED.fetched_at
+      `, [isin, ticker, name, new Date().toISOString()]);
 
     logger.info(`Cached ETF info for ${isin}: ${ticker} — "${name}"`);
   }
 }
 
 export default EtfInfoRepository;
-
