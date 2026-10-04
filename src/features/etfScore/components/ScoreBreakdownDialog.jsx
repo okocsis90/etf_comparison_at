@@ -108,6 +108,10 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
         </Typography>
 
         <Typography variant="body2" color="text.secondary" mb={3}>
+          {t('scoreDialog.score_summary')}
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary" mb={3}>
           {t('scoreDialog.cvVsMaxSwing')}
         </Typography>
 
@@ -115,24 +119,24 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
 
         {/* Component 1: Tax Burden */}
         <ComponentBlock t={t} title={t('scoreDialog.taxBurden_title')} weight={taxBurden.weight} score={taxBurden.score}>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="body2" color="text.secondary" display="block">
             {t('scoreDialog.taxBurden_example', { pct: taxBurden.avgDeemedToEtfPricePct.toFixed(3) })}
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+          <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
             {t('scoreDialog.taxBurden_explain')}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
             sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
             {t('scoreDialog.taxBurden_formula')}
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+          <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
             {t('scoreDialog.taxBurden_plain')}
           </Typography>
         </ComponentBlock>
 
         {/* Component 2: Consistency */}
         <ComponentBlock t={t} title={t('scoreDialog.consistency_title')} weight={consistency.weight} score={consistency.score}>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="body2" color="text.secondary" display="block">
             {t('scoreDialog.cv_label')}&nbsp;
             <strong>
               {consistency.coefficientOfVariation !== null
@@ -140,15 +144,15 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
                 : t('scoreDialog.cv_unavailable')}
             </strong>
           </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-                {t('scoreDialog.cv_explain')}
-              </Typography>
+          <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
+            {t('scoreDialog.cv_explain')}
+          </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
             sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
             {t('scoreDialog.cv_formula')}
             {consistency.coefficientOfVariation === null && `  [${t('scoreDialog.cv_neutral_applied')}]`}
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+          <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
             {t('scoreDialog.cv_example')}
           </Typography>
         </ComponentBlock>
@@ -166,7 +170,7 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
                 {t('scoreDialog.deemed_ratio_prefix')}&nbsp;
                 <strong>{deemedToGains.deemedGainsToTotalGainsPct.toFixed(1)} %</strong>
               </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
                 {t('scoreDialog.deemed_explain')}
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
@@ -220,4 +224,3 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
     </Dialog>
   );
 }
-
