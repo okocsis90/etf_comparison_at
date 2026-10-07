@@ -148,6 +148,13 @@ const translations = {
       metric_maxSwingAvgPrice: 'Max. Ausschlag / Durchschn. Preis',
       metric_predictabilityScore: 'Stabilität',
       priceDataWarning: 'Für einen Teil des Analysezeitraums waren keine ETF-Preisdaten verfügbar. Für die Berechnung wurde der nächstgelegene verfügbare Kurs vom {date} verwendet.',
+      partialTitle: 'Unvollständige ETF-Daten — kein Steuerscore berechnet',
+      partialBody: 'Ein Steuerscore wird erst angezeigt, wenn genügend verlässliche Steuer- und Kurshistorie verfügbar ist.',
+      partialCurrentPrice: 'Letzter verfügbarer Kurs',
+      partialReports: '{count} OeKB-Jahresberichte verfügbar',
+      partialReportsTable: 'Verfügbare OeKB-Berichte',
+      partialDeemedIncome: 'Ausschüttungsgleiche Erträge',
+      reportsAnalyzed: '{analyzed} von {available} Berichten analysiert',
     },
     sections: {
       taxEfficiency: 'Steuereffizienz',
@@ -305,6 +312,13 @@ const translations = {
       metric_maxSwingAvgPrice: 'Max Swing / Avg Price',
       metric_predictabilityScore: 'Stability',
       priceDataWarning: 'ETF price history was unavailable for part of the analysis period. The calculation used the nearest available quote from {date}.',
+      partialTitle: 'Incomplete ETF data — no tax score calculated',
+      partialBody: 'A tax score is shown only when enough reliable tax-report and price-history data is available.',
+      partialCurrentPrice: 'Latest available price',
+      partialReports: '{count} OeKB yearly reports available',
+      partialReportsTable: 'Available OeKB reports',
+      partialDeemedIncome: 'Deemed income',
+      reportsAnalyzed: '{analyzed} of {available} reports analyzed',
     },
     sections: {
       taxEfficiency: 'Tax Efficiency',
@@ -335,6 +349,5 @@ export function setLocale(locale) {
 export function getLocale() { return current; }
 
 export default translations;
-
 
 

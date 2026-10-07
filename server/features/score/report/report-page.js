@@ -36,12 +36,15 @@ class ReportPage {
     // --- Element Access ---
 
     async _waitForChevron() {
-        await this.page.waitForSelector(reportSelectors.chevron, { visible: true });
         return this.page.$(reportSelectors.chevron);
     }
 
     async getTables() {
         return this.page.$$(reportSelectors.tables);
+    }
+
+    async getBodyText() {
+        return this.page.evaluate(() => document.body.innerText);
     }
 
     async getTableRows(table) {
@@ -70,9 +73,10 @@ class ReportPage {
      */
     async clickChevron() {
         const chevron = await this._waitForChevron();
-        if (!chevron) throw new Error('Chevron icon not found');
+        if (!chevron) return false;
         await this.scrollAndClick(chevron);
         await delay(800);
+        return true;
     }
 }
 

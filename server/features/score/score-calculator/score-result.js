@@ -30,6 +30,9 @@
  * @property {Date} firstBusinessYearStart - First business year start date
  * @property {Date} lastBusinessYearEnd - Last business year end date
  * @property {number} totalReports - Total number of reports analyzed
+ * @property {number} sourceReportCount - Number of OeKB reports found before price filtering
+ * @property {object[]} analysisWarnings - Data-quality limitations affecting this analysis
+ * @property {boolean} isPartial - Whether the response lacks enough data for a score
  * @property {'A'|'B'|'C'|'D'|'E'} taxEfficiencyGrade - Overall Austrian tax-efficiency grade
  * @property {number} taxEfficiencyScore - Numeric score 0-100 backing the grade
  * @property {{ taxBurden: object, consistency: object, deemedToGains: object }} taxEfficiencyScoreBreakdown - Per-component score details
@@ -79,6 +82,9 @@ class ScoreResult {
     confidenceLevel,
     confidenceLabel,
     priceDataWarnings = [],
+    analysisWarnings = [],
+    sourceReportCount = totalReports,
+    isPartial = false,
   }) {
     this.isin = isin;
     this.ticker = ticker ?? null;
@@ -105,6 +111,9 @@ class ScoreResult {
     this.confidenceLevel = confidenceLevel;
     this.confidenceLabel = confidenceLabel;
     this.priceDataWarnings = priceDataWarnings;
+    this.analysisWarnings = analysisWarnings;
+    this.sourceReportCount = sourceReportCount;
+    this.isPartial = isPartial;
   }
 }
 

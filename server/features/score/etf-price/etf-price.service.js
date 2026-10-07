@@ -112,7 +112,8 @@ class EtfPriceService {
                 price: result.price
             };
         } catch (error) {
-            logger.error(`Failed to fetch price for ${isin} (${ticker}): ${error.message}`);
+            const log = error instanceof NoPriceDataError ? logger.warn : logger.error;
+            log(`Failed to fetch price for ${isin} (${ticker}): ${error.message}`);
             throw error;
         }
     }

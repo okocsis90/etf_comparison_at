@@ -50,7 +50,6 @@ export default class ReportValueExtractor {
      * @returns {Promise<string|null>} The currency value or null if not found
      */
     static async extractCurrencyValue(page) {
-        await page.waitForSelector(reportSelectors.fundsTable, { visible: true });
         const fundTableChildren = await page.$$(reportSelectors.fundsTableChildren);
         for (const child of fundTableChildren) {
             const innerDivs = await child.$$(reportSelectors.fundsTableInnerDiv);

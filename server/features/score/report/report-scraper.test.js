@@ -213,24 +213,46 @@ describe('ReportScraper', () => {
             );
         });
 
-        test('should throw when not enough tables after chevron click', async () => {
+        test('should return a warning rather than throw when the report page has no tables', async () => {
             await scraper.launchBrowser();
 
             ReportValueExtractor.extractCurrencyValue.mockResolvedValue('EUR');
 
-            // Only 2 tables instead of 3
             mockPage.$$
-                .mockResolvedValueOnce([{}, {}]);
+                .mockResolvedValueOnce([]);
 
-            await expect(scraper.scrape()).rejects.toThrow('Expected at least 3 tables');
+            const result = await scraper.scrape();
+
+            expect(result.reports).toHaveLength(0);
+            expect(result.warnings).toEqual(expect.arrayContaining([
+                expect.objectContaining({ type: 'report_table_unavailable' }),
+            ]));
+        });
+
+        test('should use the only table when OeKB returns the newer one-table layout', async () => {
+            await scraper.launchBrowser();
+            ReportValueExtractor.extractCurrencyValue.mockResolvedValue('USD');
+
+            const mockRow = {};
+            const mockReportTable = { $$: jest.fn().mockResolvedValue([mockRow]) };
+            mockPage.$$.mockResolvedValueOnce([mockReportTable]);
+            ReportRowParser.parse.mockResolvedValue(null);
+
+            const result = await scraper.scrape();
+
+            expect(mockReportTable.$$).toHaveBeenCalledWith('tbody tr');
+            expect(result.reports).toHaveLength(0);
+            expect(result.warnings).toEqual(expect.arrayContaining([
+                expect.objectContaining({ type: 'report_layout_changed' }),
+                expect.objectContaining({ type: 'reports_unavailable' }),
+            ]));
         });
     });
 
     describe('static constants', () => {
-        test('should have correct table indices', () => {
+        test('should keep the legacy table indices for expanded report details', () => {
             expect(ReportScraper.REPORT_TABLE_INDEX).toBe(1);
             expect(ReportScraper.DETAILS_TABLE_INDEX).toBe(2);
-            expect(ReportScraper.MIN_TABLES_AFTER_CHEVRON).toBe(3);
         });
     });
 });

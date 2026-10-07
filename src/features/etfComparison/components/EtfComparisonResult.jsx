@@ -2,6 +2,7 @@ import { Box, Alert, Grid, Paper, Typography, Chip } from '@mui/material';
 import { useTranslation } from '../../../i18n/LanguageProvider';
 import { GRADE_COLORS } from '../../etfScore/config/gradeConfig';
 import ComparisonTable from './ComparisonTable';
+import EtfPartialResult from '../../../components/EtfPartialResult';
 
 // ── Per-ETF summary card ──────────────────────────────────────────────────────
 
@@ -84,7 +85,9 @@ function EtfSummaryCard({ data }) {
  * @param {{ results: Array<{ isin: string, data: object|null, error: string|null }> }} props
  */
 export default function EtfComparisonResult({ results }) {
-  const successful = results.filter((r) => r.data !== null);
+  const { t } = useTranslation();
+  const successful = results.filter((r) => r.data !== null && !r.data.isPartial);
+  const partial = results.filter((r) => r.data?.isPartial);
   const failed = results.filter((r) => r.error !== null);
 
   return (
@@ -94,6 +97,10 @@ export default function EtfComparisonResult({ results }) {
         <Alert key={r.isin} severity="error" sx={{ mb: 1 }}>
           <strong>{r.isin}</strong>: {r.error}
         </Alert>
+      ))}
+
+      {partial.map((r) => (
+        <EtfPartialResult key={r.isin} data={r.data} compact />
       ))}
 
       {/* Need at least 2 successful results to show a comparison */}
@@ -121,4 +128,3 @@ export default function EtfComparisonResult({ results }) {
     </Box>
   );
 }
-

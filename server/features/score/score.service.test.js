@@ -307,7 +307,7 @@ describe('ScoreService', () => {
             expect(mockCalculateScore.mock.calls[0][0].etfPriceAtLastBusinessYearEndEur).toBe(35);
         });
 
-        test('should skip an unavailable report price while retaining boundary prices', async () => {
+        test('should return report details without a score when all report prices are unavailable', async () => {
             const reportResult = makeReportResult({ currency: 'EUR', reports: [makeReport()] });
             const missingPrice = new (await import('./etf-price/etf-price.service.js')).NoPriceDataError(
                 'Report date is before ticker inception',
@@ -322,33 +322,73 @@ describe('ScoreService', () => {
             mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 40 }));
             mockCalculateScore.mockReturnValue({});
 
-            await service.getScore(ISIN);
+            const result = await service.getScore(ISIN);
 
-            expect(mockCalculateScore.mock.calls[0][0].reports).toHaveLength(0);
-            expect(mockCalculateScore.mock.calls[0][0].etfPriceAtFirstBusinessYearStartEur).toBe(20);
-            expect(mockCalculateScore.mock.calls[0][0].etfPriceAtLastBusinessYearEndEur).toBe(25);
-        });
-
-        test('should throw when no reports are found', async () => {
-            mockGetReportResult.mockResolvedValue(makeReportResult({ reports: [] }));
-
-            await expect(service.getScore(ISIN)).rejects.toThrow(`No reports found for ISIN: ${ISIN}`);
+            expect(result.isPartial).toBe(true);
+            expect(result.reports).toHaveLength(1);
+            expect(result.warnings).toEqual(expect.arrayContaining([
+                expect.objectContaining({ type: 'report_price_unavailable' }),
+            ]));
             expect(mockCalculateScore).not.toHaveBeenCalled();
         });
 
-        test('should propagate errors from reportService', async () => {
-            mockGetReportResult.mockRejectedValue(new Error('Scrape failed'));
+        test('should return available fund data when no reports are found', async () => {
+            mockGetReportResult.mockResolvedValue(makeReportResult({ reports: [] }));
+            mockGetEtfInfo.mockResolvedValue({ ticker: 'VUSA.AS', name: 'Vanguard S&P 500 UCITS ETF' });
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 90 }));
 
-            await expect(service.getScore(ISIN)).rejects.toThrow('Scrape failed');
+            await expect(service.getScore(ISIN)).resolves.toEqual(expect.objectContaining({
+                isin: ISIN,
+                isPartial: true,
+                ticker: 'VUSA.AS',
+                currentPrice: { value: 90, currency: 'EUR' },
+                warnings: [expect.objectContaining({ type: 'reports_unavailable' })],
+            }));
+            expect(mockCalculateScore).not.toHaveBeenCalled();
         });
 
-        test('should propagate errors from etfPriceService', async () => {
+        test('should return partial report data when historical boundary prices are unavailable', async () => {
             const reportResult = makeReportResult({ currency: 'EUR', reports: [makeReport()] });
             mockGetReportResult.mockResolvedValue(reportResult);
-            mockGetPrice.mockRejectedValue(new Error('Price fetch failed'));
-            mockGetCurrentPrice.mockResolvedValue(makePriceData());
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 90 }));
+            mockGetPrice.mockRejectedValue(new Error('Historical quote unavailable'));
 
-            await expect(service.getScore(ISIN)).rejects.toThrow('Price fetch failed');
+            const result = await service.getScore(ISIN);
+
+            expect(result).toEqual(expect.objectContaining({
+                isPartial: true,
+                reports: reportResult.reports,
+                warnings: expect.arrayContaining([
+                    expect.objectContaining({ type: 'historical_price_unavailable' }),
+                ]),
+            }));
+            expect(mockCalculateScore).not.toHaveBeenCalled();
+        });
+
+        test('should return partial data when OeKB report retrieval fails', async () => {
+            mockGetReportResult.mockRejectedValue(new Error('Scrape failed'));
+            mockGetCurrentPrice.mockResolvedValue(makePriceData({ price: 90 }));
+
+            await expect(service.getScore(ISIN)).resolves.toEqual(expect.objectContaining({
+                isPartial: true,
+                warnings: [expect.objectContaining({
+                    type: 'reports_unavailable',
+                    message: 'Scrape failed',
+                })],
+            }));
+        });
+
+        test('should return partial data when current price is unavailable', async () => {
+            const reportResult = makeReportResult({ currency: 'EUR', reports: [makeReport()] });
+            mockGetReportResult.mockResolvedValue(reportResult);
+            mockGetCurrentPrice.mockRejectedValue(new Error('Price fetch failed'));
+
+            await expect(service.getScore(ISIN)).resolves.toEqual(expect.objectContaining({
+                isPartial: true,
+                warnings: expect.arrayContaining([
+                    expect.objectContaining({ type: 'current_price_unavailable' }),
+                ]),
+            }));
         });
 
         test('should propagate errors from currencyExchangeRateService', async () => {

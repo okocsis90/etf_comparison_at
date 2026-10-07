@@ -65,7 +65,7 @@ class ReportRepository {
     async save(reportResult) {
         const { isin, currency, reports } = reportResult;
         if (!isin) throw new Error('isin is required');
-        if (!reports || reports.length === 0) return;
+        if (!currency || !reports || reports.length === 0) return;
 
         const fetchedAt = new Date().toISOString();
         const nextFetchAllowedAt = _calculateNextFetchDate(reports).toISOString();

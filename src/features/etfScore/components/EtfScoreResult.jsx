@@ -10,6 +10,7 @@ import ScoreBreakdownDialog from './ScoreBreakdownDialog';
 import ReportChart from './ReportChart';
 import ReportTable from './ReportTable';
 import { useTranslation } from '../../../i18n/LanguageProvider';
+import EtfPartialResult from '../../../components/EtfPartialResult';
 
 /**
  * Full result panel rendered after a successful score fetch.
@@ -23,13 +24,17 @@ export default function EtfScoreResult({ data }) {
 
   const { t } = useTranslation();
 
+  if (data.isPartial) {
+    return <EtfPartialResult data={data} />;
+  }
+
+  const warnings = data.analysisWarnings ?? data.priceDataWarnings ?? [];
+
   return (
     <Box>
-      {data.priceDataWarnings?.length > 0 && (
+      {warnings.length > 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
-          {t('etfScore.priceDataWarning', {
-            date: dateLabel(data.priceDataWarnings[0].usedDate),
-          })}
+          {warnings.map((warning) => warning.message).filter(Boolean).join(' ')}
         </Alert>
       )}
 
@@ -49,7 +54,14 @@ export default function EtfScoreResult({ data }) {
               <Chip label={data.ticker} size="small" variant="outlined" color="secondary" />
             )}
             <Chip label={data.originalCurrency} size="small" color="primary" variant="outlined" />
-            <Chip label={`${data.totalReports} ${data.totalReports !== 1 ? t('labels.reports_plural') : t('labels.report')}`} size="small" variant="outlined" />
+            <Chip
+              label={t('etfScore.reportsAnalyzed', {
+                analyzed: data.totalReports,
+                available: data.sourceReportCount ?? data.totalReports,
+              })}
+              size="small"
+              variant="outlined"
+            />
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch' }}>

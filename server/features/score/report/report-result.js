@@ -3,6 +3,7 @@ class ReportResult {
     this.isin = isin;
     this.currency = currency;
     this.reports = [];
+    this.warnings = [];
   }
 
   addReport({ date, deemedIncome, businessYearStart, businessYearEnd }) {
@@ -12,6 +13,10 @@ class ReportResult {
       businessYearStart,
       businessYearEnd,
     });
+  }
+
+  addWarning(type, message) {
+    this.warnings.push({ type, message });
   }
 }
 

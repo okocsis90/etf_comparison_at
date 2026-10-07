@@ -89,18 +89,15 @@ describe('ReportPage', () => {
     });
 
     describe('_waitForChevron', () => {
-        test('should wait for chevron selector and return element', async () => {
+        test('should query for the chevron without waiting for optional content', async () => {
             const mockChevron = { click: jest.fn() };
-            mockPage.waitForSelector.mockResolvedValue(undefined);
             mockPage.$.mockResolvedValue(mockChevron);
 
             const page = new ReportPage(mockPage, 'IE00BK5BQX27');
             const chevron = await page._waitForChevron();
 
-            expect(mockPage.waitForSelector).toHaveBeenCalledWith(
-                'a[role="button"].p-accordion-header-link chevronrighticon',
-                { visible: true }
-            );
+            expect(mockPage.$).toHaveBeenCalledWith('a[role="button"].p-accordion-header-link chevronrighticon');
+            expect(mockPage.waitForSelector).not.toHaveBeenCalled();
             expect(chevron).toBe(mockChevron);
         });
     });
@@ -160,28 +157,26 @@ describe('ReportPage', () => {
     });
 
     describe('clickChevron', () => {
-        test('should wait for, scroll to, and click the chevron', async () => {
+        test('should scroll to and click the chevron when present', async () => {
             const mockChevron = {
                 evaluate: jest.fn().mockResolvedValue(undefined),
                 click: jest.fn().mockResolvedValue(undefined),
             };
-            mockPage.waitForSelector.mockResolvedValue(undefined);
             mockPage.$.mockResolvedValue(mockChevron);
 
             const page = new ReportPage(mockPage, 'IE00BK5BQX27');
-            await page.clickChevron();
+            const expanded = await page.clickChevron();
 
-            expect(mockPage.waitForSelector).toHaveBeenCalled();
+            expect(expanded).toBe(true);
             expect(mockChevron.click).toHaveBeenCalled();
         });
 
-        test('should throw error when chevron is not found', async () => {
-            mockPage.waitForSelector.mockResolvedValue(undefined);
+        test('should report that the chevron is absent without throwing', async () => {
             mockPage.$.mockResolvedValue(null);
 
             const page = new ReportPage(mockPage, 'IE00BK5BQX27');
 
-            await expect(page.clickChevron()).rejects.toThrow('Chevron icon not found');
+            await expect(page.clickChevron()).resolves.toBe(false);
         });
     });
 

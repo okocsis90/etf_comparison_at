@@ -16,12 +16,12 @@ import logger from '../../../shared/logger.js';
 class ReportScraper {
     static REPORT_TABLE_INDEX = 1;
     static DETAILS_TABLE_INDEX = 2;
-    static MIN_TABLES_AFTER_CHEVRON = 3;
 
     constructor(isin) {
         this.isin = isin;
         this.browser = null;
         this.reportPage = null;
+        this.warnings = [];
     }
 
     // --- Browser Lifecycle ---
@@ -49,9 +49,13 @@ class ReportScraper {
      * @returns {Promise<ReportResult>}
      */
     async scrape() {
+        this.warnings = [];
         await this._navigateToPage();
         const currency = await this._extractCurrency();
-        await this.reportPage.clickChevron();
+        const expanded = await this.reportPage.clickChevron();
+        if (!expanded) {
+            this._addWarning('report_table_unavailable', 'OeKB report section was not present on the page.');
+        }
         const reports = await this._extractReports();
         return this._buildResult(currency, reports);
     }
@@ -72,20 +76,35 @@ class ReportScraper {
             logger.info(`Currency value: ${currency}`);
         } else {
             logger.warn('Currency value not found');
+            this._addWarning('report_currency_unavailable', 'OeKB did not expose the fund currency.');
         }
         return currency;
     }
 
     async _extractReports() {
-        const tables = await this.reportPage.getTables();
-        this._validateTablesCount(tables);
-        return this._parseReportRows(tables[ReportScraper.REPORT_TABLE_INDEX]);
-    }
-
-    _validateTablesCount(tables) {
-        if (tables.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) {
-            throw new Error(`Expected at least ${ReportScraper.MIN_TABLES_AFTER_CHEVRON} tables after chevron click`);
+        const bodyText = await this.reportPage.getBodyText();
+        if (/keine\s+steuermeldungen\s+vorhanden|keine\s+meldungen\s+vorhanden/i.test(bodyText)) {
+            logger.warn(`OeKB reports unavailable for ${this.isin}: page says no tax reports are available`);
+            this._addWarning('reports_unavailable', 'OeKB reports that no tax reports are available for this ISIN.');
+            return [];
         }
+
+        const tables = await this.reportPage.getTables();
+        if (tables.length === 0) {
+            logger.warn(`OeKB report table unavailable for ${this.isin}`);
+            this._addWarning('report_table_unavailable', 'OeKB did not provide a report table for this ISIN.');
+            return [];
+        }
+
+        if (tables.length < 3) {
+            logger.warn(`OeKB report layout changed for ${this.isin}: found ${tables.length} table(s)`);
+            this._addWarning('report_layout_changed', `OeKB returned ${tables.length} table(s); report details may be incomplete.`);
+        }
+
+        const reportTable = tables.length > ReportScraper.REPORT_TABLE_INDEX
+            ? tables[ReportScraper.REPORT_TABLE_INDEX]
+            : tables[0];
+        return this._parseReportRows(reportTable);
     }
 
     async _parseReportRows(reportTable) {
@@ -109,7 +128,10 @@ class ReportScraper {
         await delay(600);
 
         const tablesAfterClick = await this.reportPage.getTables();
-        if (tablesAfterClick.length < ReportScraper.MIN_TABLES_AFTER_CHEVRON) return null;
+        if (tablesAfterClick.length <= ReportScraper.DETAILS_TABLE_INDEX) {
+            this._addWarning('report_details_unavailable', `OeKB did not expose details for report ${rowData.date}.`);
+            return null;
+        }
 
         const detailsTable = tablesAfterClick[ReportScraper.DETAILS_TABLE_INDEX];
         const deemedIncome = await ReportValueExtractor.extractDeemedIncomeValue(detailsTable);
@@ -135,9 +157,18 @@ class ReportScraper {
         for (const report of reports) {
             result.addReport(report);
         }
+        for (const warning of this.warnings) {
+            result.addWarning(warning.type, warning.message);
+        }
+        if (reports.length === 0 && !this.warnings.some(warning => warning.type === 'reports_unavailable')) {
+            result.addWarning('reports_unavailable', 'OeKB did not provide any usable yearly tax reports.');
+        }
         return result;
+    }
+
+    _addWarning(type, message) {
+        this.warnings.push({ type, message });
     }
 }
 
 export default ReportScraper;
-
