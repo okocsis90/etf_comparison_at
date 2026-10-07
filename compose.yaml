@@ -1,6 +1,11 @@
 services:
   postgres:
     image: postgres:17-alpine
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "7"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-etf_comparison}
       POSTGRES_USER: ${POSTGRES_USER:-etf_app}
@@ -18,6 +23,11 @@ services:
   migrate:
     image: flyway/flyway:11
     command: ["-connectRetries=60", "migrate"]
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "7"
     environment:
       FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-etf_comparison}
       FLYWAY_USER: ${POSTGRES_USER:-etf_app}
@@ -33,6 +43,11 @@ services:
     image: etf-comparison-backend:local
     build:
       context: ./server
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "7"
     environment:
       PORT: 3001
       DB_HOST: postgres
@@ -60,6 +75,11 @@ services:
     image: etf-comparison-frontend:local
     build:
       context: .
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "7"
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:

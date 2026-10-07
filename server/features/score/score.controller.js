@@ -12,7 +12,11 @@ class ScoreController {
       const score = await this.scoreService.getScore(isin);
       res.json(score);
     } catch (err) {
-      logger.error(`Score request failed for ISIN ${isin}: ${err.message}`);
+      logger.error('Score request failed', {
+        isin,
+        error: err.message,
+        stack: err.stack,
+      });
       res.status(500).json({ error: 'Failed to calculate score', details: err.message });
     }
   }

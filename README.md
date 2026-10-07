@@ -29,10 +29,14 @@ Useful commands:
 
 ```powershell
 docker compose ps                 # Show service status
-docker compose logs -f            # Follow logs
+docker compose logs --since 72h --timestamps backend frontend postgres migrate  # Recent logs
+docker compose logs -f --tail=100 backend frontend postgres                     # Follow live logs
+docker compose up --build -d       # Apply Compose or Nginx configuration changes
 docker compose down               # Stop and remove containers; keep database data
 docker compose up -d              # Start again after stopping
 ```
+
+Docker keeps up to seven 10 MB log files per service using its local logging driver, rotating older output automatically. This is a size limit rather than a time guarantee: under normal use it should provide several days of history, but busier services may rotate sooner. Logs are available in `docker compose logs` and are removed when their containers are removed. Backend entries include timestamps, severity, request IDs, status codes, and request duration; frontend Nginx logs include request and upstream timing details. Use the request ID to match an API call between the frontend and backend logs. Browser-side JavaScript errors remain in the browser's developer console and are not sent to Docker.
 
 Database files live in the named Docker volume `postgres_data`, not in the containers. They persist across Docker/container restarts and computer shutdowns. `docker compose down -v` removes that volume and permanently deletes the database contents. Back up important data separately; a Docker volume is not a backup.
 

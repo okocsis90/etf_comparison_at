@@ -27,7 +27,10 @@ function getDb() {
         });
 
     pool.on('error', (error) => {
-        logger.error(`Unexpected PostgreSQL pool error: ${error.message}`);
+        logger.error('Unexpected PostgreSQL pool error', {
+            error: error.message,
+            stack: error.stack,
+        });
     });
     logger.info('PostgreSQL connection pool initialised');
     return pool;

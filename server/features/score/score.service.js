@@ -23,8 +23,6 @@ class ScoreService {
   }
 
   async getScore(isin) {
-    logger.info(`Starting score calculation for ISIN: ${isin}`);
-
     let reportResult;
     try {
       reportResult = await this.reportService.getReportResult(isin);

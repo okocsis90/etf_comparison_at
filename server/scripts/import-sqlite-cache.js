@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import getDb, { closeDb } from '../shared/db/database.js';
+import logger from '../shared/logger.js';
 import { toDateKey } from '../shared/utils.js';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -49,7 +50,7 @@ async function importCache() {
                     OR EXISTS (SELECT 1 FROM etf_info) AS has_cached_rows
             `);
             if (rows[0].has_cached_rows) {
-                console.log('PostgreSQL cache already contains data; skipping optional SQLite import');
+                logger.info('PostgreSQL cache already contains data; skipping optional SQLite import');
                 return;
             }
         }
@@ -68,7 +69,7 @@ async function importCache() {
                         table.dateColumns?.includes(column) ? toDateKey(record[column]) : record[column]
                     ));
                 }
-                console.log(`Imported ${records.length} SQLite rows from ${table.name}`);
+                logger.info(`Imported ${records.length} SQLite rows from ${table.name}`);
             }
             await client.query('COMMIT');
         } catch (error) {
@@ -84,6 +85,9 @@ async function importCache() {
 }
 
 importCache().catch((error) => {
-    console.error(`SQLite cache import failed: ${error.message}`);
+    logger.error('SQLite cache import failed', {
+        error: error.message,
+        stack: error.stack,
+    });
     process.exitCode = 1;
 });
