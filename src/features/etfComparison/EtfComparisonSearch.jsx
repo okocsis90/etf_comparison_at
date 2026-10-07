@@ -15,6 +15,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { isValidIsin } from '../../utils/isinValidator';
+import { recordAppUsage } from '../../api/usageApi';
 import { fetchScore } from './api/comparisonApi';
 import EtfComparisonResult from './components/EtfComparisonResult';
 
@@ -57,6 +58,7 @@ export default function EtfComparisonSearch() {
     const isins = inputs.map((v) => v.trim().toUpperCase()).filter(isValidIsin);
     setLoading(true);
     setIsDirty(false);
+    await recordAppUsage();
     const settled = await Promise.allSettled(isins.map((isin) => fetchScore(isin)));
     setResults(
       settled.map((r, i) => ({
@@ -141,4 +143,3 @@ export default function EtfComparisonSearch() {
     </Box>
   );
 }
-

@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { isValidIsin } from '../../utils/isinValidator';
+import { recordAppUsage } from '../../api/usageApi';
 import { fetchScore } from './api/scoreApi';
 import EtfScoreResult from './components/EtfScoreResult';
 
@@ -33,6 +34,7 @@ export default function EtfScoreSearch() {
     setError(null);
     setResult(null);
     try {
+      await recordAppUsage();
       const data = await fetchScore(normalized);
       setResult(data);
     } catch (err) {
@@ -100,4 +102,3 @@ export default function EtfScoreSearch() {
     </Box>
   );
 }
-

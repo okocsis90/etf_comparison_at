@@ -2,11 +2,14 @@
 import { randomUUID } from 'node:crypto';
 import express from 'express';
 import scoreRoutes from './features/score/score.controller.js';
+import usageController from './features/usage/usage.controller.js';
 import Logger from './shared/logger.js';
 import getDb, { closeDb } from './shared/db/database.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+app.use(express.json({ limit: '1kb' }));
 
 app.use((req, res, next) => {
   const requestId = randomUUID();
@@ -41,6 +44,7 @@ app.get('/health', async (_req, res) => {
   }
 });
 
+app.post('/api/usage', usageController);
 app.use('/api/score', (req, res) => new scoreRoutes().handleScoreRequest(req, res));
 
 const startServer = async () => {

@@ -38,6 +38,17 @@ docker compose up -d              # Start again after stopping
 
 Docker keeps up to seven 10 MB log files per service using its local logging driver, rotating older output automatically. This is a size limit rather than a time guarantee: under normal use it should provide several days of history, but busier services may rotate sooner. Logs are available in `docker compose logs` and are removed when their containers are removed. Backend entries include timestamps, severity, request IDs, status codes, and request duration; frontend Nginx logs include request and upstream timing details. Use the request ID to match an API call between the frontend and backend logs. Browser-side JavaScript errors remain in the browser's developer console and are not sent to Docker.
 
+## Daily usage counts
+
+The app records one anonymous browser ID per UTC calendar day when a user starts an ETF analysis or comparison. The ID is kept in that browser profile's local storage; clearing browser data or using a different browser/device creates a new counted user. `daily_usage_visitors` is the source of truth and deduplicates repeat visits. To view daily unique-user counts:
+
+```sql
+SELECT usage_date, COUNT(*) AS unique_users
+FROM daily_usage_visitors
+GROUP BY usage_date
+ORDER BY usage_date DESC;
+```
+
 Database files live in the named Docker volume `postgres_data`, not in the containers. They persist across Docker/container restarts and computer shutdowns. `docker compose down -v` removes that volume and permanently deletes the database contents. Back up important data separately; a Docker volume is not a backup.
 
 To share a locally runnable package, provide the project files, including `compose.yaml`, both Dockerfiles, `nginx.conf`, and `server/db/migration/`. The recipient needs Docker Desktop and creates their own `.env` from `.env.example`, then runs the same `docker compose up --build -d` command. Do not share your `.env`. This local setup builds the images on each recipient's machine; publishing prebuilt images can be added later.
