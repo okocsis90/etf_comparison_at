@@ -62,7 +62,7 @@ export default function ReportChart({ reportMetrics }) {
       <Paper elevation={1} sx={{ p: 2, mb: 4 }}>
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#dce6e7" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis
               yAxisId="eur"
@@ -80,13 +80,12 @@ export default function ReportChart({ reportMetrics }) {
             />
             <RechartsTooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 13 }} />
-            <Bar yAxisId="eur" dataKey={t('reportChart.deemedIncome')} fill="#e65100" opacity={0.85} radius={[3, 3, 0, 0]} />
-            <Line yAxisId="eur" type="monotone" dataKey={t('reportChart.etfPrice')} stroke="#1976d2" strokeWidth={2} dot={{ r: 4 }} />
-            <Line yAxisId="pct" type="monotone" dataKey={t('reportChart.deemedPct')} stroke="#2e7d32" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
+            <Bar yAxisId="eur" dataKey={t('reportChart.deemedIncome')} fill="#b68a47" opacity={0.9} radius={[3, 3, 0, 0]} />
+            <Line yAxisId="eur" type="monotone" dataKey={t('reportChart.etfPrice')} stroke="#155e85" strokeWidth={2} dot={{ r: 4 }} />
+            <Line yAxisId="pct" type="monotone" dataKey={t('reportChart.deemedPct')} stroke="#2f876a" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
           </ComposedChart>
         </ResponsiveContainer>
       </Paper>
     </>
   );
 }
-

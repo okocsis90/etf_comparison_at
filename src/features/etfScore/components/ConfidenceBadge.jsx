@@ -6,11 +6,11 @@ import { useTranslation } from '../../../i18n/LanguageProvider';
  * Levels 1–5 map directly to the confidenceLevel field returned by the API.
  */
 const CONFIDENCE_CONFIG = {
-  1: { color: '#78909c' },
-  2: { color: '#ef6c00' },
-  3: { color: '#f9a825' },
-  4: { color: '#558b2f' },
-  5: { color: '#1b5e20'  },
+  1: { color: '#526b79' },
+  2: { color: '#386f84' },
+  3: { color: '#347e7a' },
+  4: { color: '#2f876a' },
+  5: { color: '#247a59' },
 };
 
 /**
@@ -37,7 +37,7 @@ export default function ConfidenceBadge({ level, label, totalReports }) {
       <Typography variant="caption" display="block" mb={0.75}>
         {t('confidence.based_on', { n: totalReports })}
       </Typography>
-      <Typography variant="caption" display="block" color="text.secondary">
+      <Typography variant="caption" display="block" color="#fff" sx={{ lineHeight: 1.5 }}>
         {t('confidence.legend')}
       </Typography>
     </Box>
@@ -72,4 +72,3 @@ export default function ConfidenceBadge({ level, label, totalReports }) {
     </Tooltip>
   );
 }
-

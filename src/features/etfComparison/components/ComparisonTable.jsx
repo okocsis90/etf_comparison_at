@@ -239,9 +239,9 @@ export default function ComparisonTable({ results }) {
                         key={i}
                         align="center"
                         sx={{
-                          bgcolor: winnerIdx === i ? '#e8f5e9' : 'transparent',
+                          bgcolor: winnerIdx === i ? '#e4f4ec' : 'transparent',
                           fontWeight: winnerIdx === i ? 700 : 400,
-                          color: winnerIdx === i ? '#2e7d32' : 'inherit',
+                          color: winnerIdx === i ? '#247a59' : 'inherit',
                           transition: 'background-color 0.2s',
                         }}
                       >

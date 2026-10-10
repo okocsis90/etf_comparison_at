@@ -79,7 +79,7 @@ export default function EtfComparisonSearch() {
       {/* ── ISIN inputs ────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
         {inputs.map((val, i) => (
-          <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+          <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', maxWidth: 380 }}>
             <TextField
               label={t('common.etfLabel', { idx: i + 1 })}
               placeholder={t('common.isinPlaceholder')}
@@ -100,7 +100,7 @@ export default function EtfComparisonSearch() {
                   style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' },
                 },
               }}
-              sx={{ width: 320 }}
+              sx={{ flex: 1, width: { xs: '100%', sm: 320 } }}
             />
             {inputs.length > MIN_ETFS && (
               <IconButton onClick={() => handleRemove(i)} sx={{ mt: 1 }} color="error" size="small">

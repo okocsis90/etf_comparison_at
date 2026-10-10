@@ -59,21 +59,31 @@ function AppInner() {
   }, [locale, t]);
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
 
       {/* ── App bar ──────────────────────────────────────────────────────── */}
       <AppBar
         position="static"
-        elevation={4}
+        elevation={0}
         sx={{
           bgcolor: 'transparent',
-          backgroundImage: 'linear-gradient(90deg, #0d47a1 0%, #1565c0 60%)',
+          backgroundImage: 'linear-gradient(110deg, #12344a 0%, #155e85 72%, #167c79 100%)',
+          position: 'relative',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: 'linear-gradient(90deg, #2f9e74, #83d3a2 55%, transparent)',
+          },
         }}
       >
-        <Toolbar sx={{ alignItems: 'center' }}>
+        <Toolbar sx={{ alignItems: 'center', minHeight: { xs: 64, sm: 72 }, px: { xs: 2, sm: 3 } }}>
           <BrandLogo size={36} />
           <Box sx={{ ml: 1 }}>
-            <Typography variant="h6" fontWeight={800} letterSpacing={0.5} color="common.white">
+            <Typography variant="h6" fontWeight={800} letterSpacing={0.2} color="common.white">
               {t('appTitle')}
             </Typography>
           </Box>
@@ -85,13 +95,18 @@ function AppInner() {
       </AppBar>
 
       {/* ── Navigation tabs ──────────────────────────────────────────────── */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'rgba(21, 94, 133, 0.12)', bgcolor: 'background.paper' }}>
         <Container maxWidth="lg">
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}
             textColor="primary"
-            indicatorColor="primary"
+            indicatorColor="secondary"
+            sx={{
+              minHeight: 58,
+              '& .MuiTab-root': { minHeight: 58, fontWeight: 700, textTransform: 'none' },
+              '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
+            }}
           >
             {TABS.map((tab, i) => (
               <Tab key={i} label={tab.label} icon={tab.icon} iconPosition="start" />
@@ -101,19 +116,37 @@ function AppInner() {
       </Box>
 
       {/* ── Page content ─────────────────────────────────────────────────── */}
-      <Container maxWidth="lg" sx={{ py: 5, flexGrow: 1 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 }, flexGrow: 1 }}>
+        <Box
+          sx={{
+            mb: 3,
+            p: { xs: 2.5, sm: 3.5 },
+            borderRadius: 3,
+            border: '1px solid rgba(47, 158, 116, 0.16)',
+            background: 'linear-gradient(115deg, rgba(228, 244, 236, 0.9), rgba(228, 240, 245, 0.75) 72%, #fff)',
+          }}
+        >
+          <Typography variant="h4" fontWeight={800} gutterBottom>
             {current.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 850, lineHeight: 1.7 }}>
             {current.description}
           </Typography>
         </Box>
 
         {/* All tab panels stay mounted so their state survives tab switches. */}
         {TABS.map((tab, i) => (
-          <Box key={i} sx={{ display: activeTab === i ? 'block' : 'none' }}>
+          <Box
+            key={i}
+            sx={{
+              display: activeTab === i ? 'block' : 'none',
+              p: { xs: 2, sm: 3 },
+              borderRadius: 3,
+              border: '1px solid rgba(24, 43, 54, 0.08)',
+              bgcolor: 'background.paper',
+              boxShadow: '0 10px 32px rgba(24, 43, 54, 0.045)',
+            }}
+          >
             {tab.component}
           </Box>
         ))}

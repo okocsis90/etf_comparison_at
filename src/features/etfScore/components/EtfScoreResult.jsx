@@ -91,22 +91,22 @@ export default function EtfScoreResult({ data }) {
       <SectionTitle>{t('etfScore.section_priceOverview')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_currentPrice')} value={eur(data.currentEtfPriceEur)} color="#1976d2"
+          <MetricCard title={t('etfScore.metric_currentPrice')} value={eur(data.currentEtfPriceEur)} color="#155e85"
             tooltip={t('etfScore.currentPrice_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_pricePeriodStart')} value={eur(data.etfPriceAtFirstBusinessYearStartEur)}
-            subtitle={dateLabel(data.firstBusinessYearStart)} color="#7b1fa2"
+            subtitle={dateLabel(data.firstBusinessYearStart)} color="#397f98"
             tooltip={t('etfScore.periodStart_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_pricePeriodEnd')} value={eur(data.etfPriceAtLastBusinessYearEndEur)}
-            subtitle={dateLabel(data.lastBusinessYearEnd)} color="#7b1fa2"
+            subtitle={dateLabel(data.lastBusinessYearEnd)} color="#397f98"
             tooltip={t('etfScore.periodEnd_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard title={t('etfScore.metric_totalGainsPeriod')} value={eur(data.totalGains)}
-            color={data.totalGains >= 0 ? '#2e7d32' : '#c62828'}
+            color={data.totalGains >= 0 ? '#2f876a' : '#a85252'}
             tooltip={t('etfScore.totalGains_tooltip')} />
         </Grid>
       </Grid>
@@ -117,19 +117,19 @@ export default function EtfScoreResult({ data }) {
       <SectionTitle>{t('etfScore.section_deemedIncome')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_totalDeemedGains')} value={eur(data.deemedGains)} color="#e65100"
+          <MetricCard title={t('etfScore.metric_totalDeemedGains')} value={eur(data.deemedGains)} color="#a77a29"
             tooltip={t('etfScore.totalDeemed_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_deemedToTotal')} value={pct(data.deemedGainsToTotalGainsPercent)} color="#e65100"
+          <MetricCard title={t('etfScore.metric_deemedToTotal')} value={pct(data.deemedGainsToTotalGainsPercent)} color="#a77a29"
             tooltip={t('scoreDialog.deemed_explain')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_avgDeemedPerYear')} value={eur(data.avgDeemedIncomeEur)} color="#f57c00"
+          <MetricCard title={t('etfScore.metric_avgDeemedPerYear')} value={eur(data.avgDeemedIncomeEur)} color="#b68a47"
             tooltip={t('etfScore.avgDeemedPerYear_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_avgDeemedToCurrent')} value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#f57c00"
+          <MetricCard title={t('etfScore.metric_avgDeemedToCurrent')} value={pct(data.avgDeemedIncomeToCurrentEtfPricePercent)} color="#b68a47"
             tooltip={t('etfScore.avgDeemedToCurrent_tooltip')} />
         </Grid>
       </Grid>
@@ -140,15 +140,15 @@ export default function EtfScoreResult({ data }) {
       <SectionTitle>{t('etfScore.section_consistency')}</SectionTitle>
       <Grid container spacing={2} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_avgDeemedEtfPct')} value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#00796b"
+          <MetricCard title={t('etfScore.metric_avgDeemedEtfPct')} value={pct(data.avgDeemedIncomeToEtfPricePercent)} color="#347e7a"
             tooltip={t('etfScore.avgDeemedEtfPct_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_maxDeemedDiff')} value={eur(data.maxDeemedIncomeDiffEur)} color="#d32f2f"
+          <MetricCard title={t('etfScore.metric_maxDeemedDiff')} value={eur(data.maxDeemedIncomeDiffEur)} color="#ad6847"
             tooltip={t('etfScore.maxDeemedDiff_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard title={t('etfScore.metric_maxSwingAvgPrice')} value={pct(data.maxDiffToAvgEtfPricePercent)} color="#d32f2f"
+          <MetricCard title={t('etfScore.metric_maxSwingAvgPrice')} value={pct(data.maxDiffToAvgEtfPricePercent)} color="#ad6847"
             tooltip={t('comparison.maxSwing_tooltip')} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>

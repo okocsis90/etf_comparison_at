@@ -7,11 +7,11 @@
 
 /** @type {Record<string, string>} */
 export const GRADE_COLORS = {
-  A: '#2e7d32',
-  B: '#558b2f',
-  C: '#f57f17',
-  D: '#e65100',
-  E: '#c62828',
+  A: '#247a59',
+  B: '#4b8b68',
+  C: '#a77a29',
+  D: '#ad6847',
+  E: '#a85252',
 };
 
 /** @type {Record<string, string>} */
@@ -44,4 +44,3 @@ export const scoreToColor = (score) => {
   if (score >= 20) return GRADE_COLORS.D;
   return GRADE_COLORS.E;
 };
-

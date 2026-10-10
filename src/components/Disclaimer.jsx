@@ -58,7 +58,7 @@ export default function Disclaimer() {
         </DialogActions>
       </Dialog>
 
-      <Box component="footer" sx={{ mt: 'auto', py: 2, borderTop: 1, borderColor: 'divider', bgcolor: 'white' }}>
+      <Box component="footer" sx={{ mt: 'auto', py: 2.5, borderTop: '1px solid rgba(21, 94, 133, 0.12)', bgcolor: 'background.paper' }}>
         <Container maxWidth="lg">
           <Typography variant="caption" color="text.secondary" textAlign="center" display="block">
             {t('disclaimer.footer')}

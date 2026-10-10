@@ -51,7 +51,7 @@ export default function EtfScoreSearch() {
   return (
     <Box>
       {/* Search row */}
-      <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+      <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <TextField
           label={t('common.isinLabel')}
           placeholder={t('common.isinPlaceholder')}
@@ -73,7 +73,7 @@ export default function EtfScoreSearch() {
               style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' },
             },
           }}
-          sx={{ width: 320 }}
+          sx={{ width: { xs: '100%', sm: 320 } }}
         />
         <Button
           variant="contained"
