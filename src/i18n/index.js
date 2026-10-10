@@ -1,6 +1,11 @@
 const translations = {
   de: {
     appTitle: 'ETF Vergleich AT',
+    seo: {
+      title: 'ETF Vergleich AT – ETF-Steueranalyse für Österreich',
+      description: 'ETFs für Österreich vergleichen: steuerliche Kennzahlen, OeKB-Berichte und Kursentwicklung analysieren. Ein unabhängiges Informationstool, keine Steuerberatung.',
+      locale: 'de_AT',
+    },
     tabs: {
       analyser: {
         label: 'ETF-Analyse',
@@ -173,6 +178,11 @@ const translations = {
   },
   en: {
     appTitle: 'ETF Comparison AT',
+    seo: {
+      title: 'ETF Comparison AT – Austrian ETF Tax Analysis',
+      description: 'Compare ETFs for Austrian investors. Explore tax indicators, OeKB reports and price history with this independent information tool—not tax advice.',
+      locale: 'en_GB',
+    },
     tabs: {
       analyser: {
         label: 'ETF Analyser',
@@ -365,4 +375,3 @@ export function setLocale(locale) {
 export function getLocale() { return current; }
 
 export default translations;
-

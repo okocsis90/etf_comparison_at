@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Container, Typography, AppBar, Toolbar, Tabs, Tab } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
@@ -40,9 +40,23 @@ export default function App() {
 
 function AppInner() {
   const [activeTab, setActiveTab] = useState(0);
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const TABS = TabsDef();
   const current = TABS[activeTab];
+
+  useEffect(() => {
+    const title = t('seo.title');
+    const description = t('seo.description');
+    document.title = title;
+    document.documentElement.lang = locale;
+
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:locale"]')?.setAttribute('content', t('seo.locale'));
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+  }, [locale, t]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
