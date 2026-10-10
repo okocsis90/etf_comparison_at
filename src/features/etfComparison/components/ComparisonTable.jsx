@@ -164,14 +164,14 @@ export default function ComparisonTable({ results }) {
         {/* ── Column headers ──────────────────────────────────────────────── */}
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.100', minWidth: 210 }}>
+            <TableCell sx={{ fontWeight: 700, bgcolor: 'action.hover', minWidth: 210 }}>
               {t('comparison.metric_label')}
             </TableCell>
             {results.map((d) => (
               <TableCell
                 key={d.isin}
                 align="center"
-                sx={{ fontWeight: 700, bgcolor: 'grey.100', minWidth: 160 }}
+                sx={{ fontWeight: 700, bgcolor: 'action.hover', minWidth: 160 }}
               >
                 {d.name && (
                   <Typography variant="caption" display="block" fontWeight={700} lineHeight={1.3} mb={0.25}>
@@ -200,10 +200,10 @@ export default function ComparisonTable({ results }) {
                 <TableCell
                   colSpan={results.length + 1}
                   sx={{
-                    bgcolor: 'grey.50',
+                    bgcolor: 'action.hover',
                     py: 0.75,
                     borderBottom: '2px solid',
-                    borderColor: 'grey.300',
+                    borderColor: 'divider',
                   }}
                 >
                   <Typography variant="overline" fontWeight={700} color="text.secondary" letterSpacing={1}>
@@ -238,12 +238,16 @@ export default function ComparisonTable({ results }) {
                       <TableCell
                         key={i}
                         align="center"
-                        sx={{
-                          bgcolor: winnerIdx === i ? '#e4f4ec' : 'transparent',
+                        sx={(theme) => ({
+                          bgcolor: winnerIdx === i
+                            ? theme.palette.mode === 'dark' ? 'rgba(101, 214, 165, 0.16)' : '#e4f4ec'
+                            : 'transparent',
                           fontWeight: winnerIdx === i ? 700 : 400,
-                          color: winnerIdx === i ? '#247a59' : 'inherit',
+                          color: winnerIdx === i
+                            ? theme.palette.mode === 'dark' ? '#a0ebca' : '#247a59'
+                            : 'inherit',
                           transition: 'background-color 0.2s',
-                        }}
+                        })}
                       >
                         {val !== null && val !== undefined ? metric.format(val) : t('common.na')}
                       </TableCell>

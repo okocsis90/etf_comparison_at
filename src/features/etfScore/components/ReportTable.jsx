@@ -31,7 +31,7 @@ export default function ReportTable({ reportMetrics, avgDeemedIncomeToEtfPricePe
       <TableContainer component={Paper} elevation={1}>
         <Table size="small">
           <TableHead>
-            <TableRow sx={{ '& th': { fontWeight: 700, backgroundColor: 'grey.100' } }}>
+            <TableRow sx={{ '& th': { fontWeight: 700, backgroundColor: 'action.hover' } }}>
               <TableCell>{t('reportTable.colDate')}</TableCell>
               <TableCell align="right">{t('reportTable.colDeemedEur')}</TableCell>
               <TableCell align="right">{t('reportTable.colPriceEur')}</TableCell>
@@ -60,4 +60,3 @@ export default function ReportTable({ reportMetrics, avgDeemedIncomeToEtfPricePe
     </>
   );
 }
-

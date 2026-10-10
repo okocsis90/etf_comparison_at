@@ -10,7 +10,7 @@ export default function LanguageSelector() {
   const compact = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Box sx={{ marginLeft: 'auto', display: 'flex', gap: 1 }}>
+    <Box sx={{ display: 'flex', gap: { xs: 0, sm: 1 } }}>
       {compact ? (
         // small screens: show icon buttons only
         <>
@@ -65,5 +65,4 @@ export default function LanguageSelector() {
     </Box>
   );
 }
-
 

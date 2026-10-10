@@ -1,4 +1,5 @@
 import { Box, Typography, Divider, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import { GRADE_COLORS, GRADE_ROWS, scoreToColor } from '../config/gradeConfig';
 import { useTranslation } from '../../../i18n/LanguageProvider';
@@ -9,7 +10,7 @@ import { useTranslation } from '../../../i18n/LanguageProvider';
 
 function ScoreBar({ score }) {
   return (
-    <Box sx={{ height: 8, bgcolor: 'grey.200', borderRadius: 1, overflow: 'hidden', mt: 0.5, mb: 1 }}>
+    <Box sx={{ height: 8, bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden', mt: 0.5, mb: 1 }}>
       <Box
         sx={{
           height: '100%',
@@ -126,7 +127,7 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
             {t('scoreDialog.taxBurden_explain')}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+            sx={{ fontFamily: 'monospace', bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1 }}>
             {t('scoreDialog.taxBurden_formula')}
           </Typography>
           <Typography variant="body2" color="text.secondary" display="block" mt={0.5}>
@@ -148,7 +149,7 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
             {t('scoreDialog.cv_explain')}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-            sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+            sx={{ fontFamily: 'monospace', bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1 }}>
             {t('scoreDialog.cv_formula')}
             {consistency.coefficientOfVariation === null && `  [${t('scoreDialog.cv_neutral_applied')}]`}
           </Typography>
@@ -174,7 +175,7 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
                 {t('scoreDialog.deemed_explain')}
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" mt={0.5}
-                sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+                sx={{ fontFamily: 'monospace', bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1 }}>
                 {t('scoreDialog.deemed_formula')}
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
@@ -202,8 +203,11 @@ export default function ScoreBreakdownDialog({ open, onClose, grade, score, brea
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                border: `2px solid ${g === grade ? GRADE_COLORS[g] : 'transparent'}`,
-                bgcolor: g === grade ? `${GRADE_COLORS[g]}18` : 'grey.100',
+                border: '2px solid',
+                borderColor: g === grade ? GRADE_COLORS[g] : 'transparent',
+                bgcolor: (theme) => g === grade
+                  ? alpha(GRADE_COLORS[g], theme.palette.mode === 'dark' ? 0.24 : 0.1)
+                  : 'action.hover',
                 borderRadius: 1.5,
                 px: 1.5,
                 py: 0.75,

@@ -33,6 +33,10 @@ const translations = {
       analyse: 'Analysieren',
     },
     lang: { de: 'Deutsch (AT)', en: 'English' },
+    theme: {
+      switchToDark: 'Dunkelmodus aktivieren',
+      switchToLight: 'Hellmodus aktivieren',
+    },
     disclaimer: {
       title: 'Wichtiger Hinweis',
       intro: 'Die Inhalte dieser Website dienen ausschließlich der allgemeinen Information. Die verwendeten Daten können unvollständig, veraltet oder fehlerhaft sein; für ihre Richtigkeit, Vollständigkeit und Aktualität wird keine Gewähr übernommen.',
@@ -210,6 +214,10 @@ const translations = {
       analyse: 'Analyse',
     },
     lang: { de: 'Deutsch (AT)', en: 'English' },
+    theme: {
+      switchToDark: 'Switch to dark mode',
+      switchToLight: 'Switch to light mode',
+    },
     disclaimer: {
       title: 'Important notice',
       intro: 'The content on this website is provided for general information only. The underlying data may be incomplete, outdated or inaccurate; no guarantee is made as to its accuracy, completeness or currency.',

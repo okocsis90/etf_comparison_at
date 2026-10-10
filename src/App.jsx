@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Box, Container, Typography, AppBar, Toolbar, Tabs, Tab } from '@mui/material';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, Container, Typography, AppBar, Toolbar, Tabs, Tab, ThemeProvider, CssBaseline } from '@mui/material';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { EtfScoreSearch } from './features/etfScore';
 import { EtfComparisonSearch } from './features/etfComparison';
 import { LanguageProvider, useTranslation } from './i18n/LanguageProvider';
 import LanguageSelector from './components/LanguageSelector';
+import ColorModeToggle from './components/ColorModeToggle';
 import BrandLogo from './components/BrandLogo';
 import Disclaimer from './components/Disclaimer';
+import createAppTheme from './theme';
 
 function TabsDef() {
   const { t } = useTranslation();
@@ -31,14 +32,28 @@ function TabsDef() {
 }
 
 export default function App() {
+  const [mode, setMode] = useState(
+    () => localStorage.getItem('etf-comparison-color-mode') === 'dark' ? 'dark' : 'light'
+  );
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+
+  const toggleColorMode = () => {
+    const nextMode = mode === 'light' ? 'dark' : 'light';
+    localStorage.setItem('etf-comparison-color-mode', nextMode);
+    setMode(nextMode);
+  };
+
   return (
-    <LanguageProvider defaultLocale="de">
-      <AppInner />
-    </LanguageProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <LanguageProvider defaultLocale="de">
+        <AppInner mode={mode} onToggleColorMode={toggleColorMode} />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
-function AppInner() {
+function AppInner({ mode, onToggleColorMode }) {
   const [activeTab, setActiveTab] = useState(0);
   const { locale, t } = useTranslation();
   const TABS = TabsDef();
@@ -88,14 +103,15 @@ function AppInner() {
             </Typography>
           </Box>
 
-          <Box sx={{ ml: 'auto' }}>
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+            <ColorModeToggle mode={mode} onToggle={onToggleColorMode} />
             <LanguageSelector />
           </Box>
         </Toolbar>
       </AppBar>
 
       {/* ── Navigation tabs ──────────────────────────────────────────────── */}
-      <Box sx={{ borderBottom: 1, borderColor: 'rgba(21, 94, 133, 0.12)', bgcolor: 'background.paper' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Container maxWidth="lg">
           <Tabs
             value={activeTab}
@@ -122,8 +138,11 @@ function AppInner() {
             mb: 3,
             p: { xs: 2.5, sm: 3.5 },
             borderRadius: 3,
-            border: '1px solid rgba(47, 158, 116, 0.16)',
-            background: 'linear-gradient(115deg, rgba(228, 244, 236, 0.9), rgba(228, 240, 245, 0.75) 72%, #fff)',
+            border: '1px solid',
+            borderColor: 'divider',
+            background: mode === 'dark'
+              ? 'linear-gradient(115deg, #1b342f, #1c3039 72%, #18262e)'
+              : 'linear-gradient(115deg, rgba(228, 244, 236, 0.9), rgba(228, 240, 245, 0.75) 72%, #fff)',
           }}
         >
           <Typography variant="h4" fontWeight={800} gutterBottom>
@@ -142,9 +161,12 @@ function AppInner() {
               display: activeTab === i ? 'block' : 'none',
               p: { xs: 2, sm: 3 },
               borderRadius: 3,
-              border: '1px solid rgba(24, 43, 54, 0.08)',
+              border: '1px solid',
+              borderColor: 'divider',
               bgcolor: 'background.paper',
-              boxShadow: '0 10px 32px rgba(24, 43, 54, 0.045)',
+              boxShadow: mode === 'dark'
+                ? '0 10px 32px rgba(0, 0, 0, 0.18)'
+                : '0 10px 32px rgba(24, 43, 54, 0.045)',
             }}
           >
             {tab.component}
