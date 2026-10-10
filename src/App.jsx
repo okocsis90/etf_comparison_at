@@ -8,6 +8,7 @@ import { EtfComparisonSearch } from './features/etfComparison';
 import { LanguageProvider, useTranslation } from './i18n/LanguageProvider';
 import LanguageSelector from './components/LanguageSelector';
 import BrandLogo from './components/BrandLogo';
+import Disclaimer from './components/Disclaimer';
 
 function TabsDef() {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ function AppInner() {
   const current = TABS[activeTab];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
 
       {/* ── App bar ──────────────────────────────────────────────────────── */}
       <AppBar
@@ -86,7 +87,7 @@ function AppInner() {
       </Box>
 
       {/* ── Page content ─────────────────────────────────────────────────── */}
-      <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Container maxWidth="lg" sx={{ py: 5, flexGrow: 1 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight={700} gutterBottom>
             {current.title}
@@ -104,6 +105,7 @@ function AppInner() {
         ))}
       </Container>
 
+      <Disclaimer />
     </Box>
   );
 }

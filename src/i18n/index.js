@@ -28,6 +28,14 @@ const translations = {
       analyse: 'Analysieren',
     },
     lang: { de: 'Deutsch (AT)', en: 'English' },
+    disclaimer: {
+      title: 'Wichtiger Hinweis',
+      intro: 'Die Inhalte dieser Website dienen ausschließlich der allgemeinen Information. Die verwendeten Daten können unvollständig, veraltet oder fehlerhaft sein; für ihre Richtigkeit, Vollständigkeit und Aktualität wird keine Gewähr übernommen.',
+      advice: 'Die Inhalte stellen weder eine Anlage-, Steuer- noch Rechtsberatung oder eine persönliche Empfehlung dar. Die Berechnungsformeln wurden vom Betreiber selbst entwickelt und sind unverbindliche, illustrative Einschätzungen. Sie entsprechen keiner amtlichen oder gesetzlich anerkannten Berechnungsmethode und ersetzen keine individuelle Prüfung.',
+      reliance: 'Prüfen Sie alle Angaben eigenständig und ziehen Sie vor Anlageentscheidungen sowie steuerlichen oder rechtlichen Schritten eine qualifizierte Fachperson hinzu. Entscheidungen, die Sie auf Grundlage dieser Inhalte treffen, liegen in Ihrer eigenen Verantwortung. Eine Haftung für Schäden aus der Nutzung oder dem Vertrauen auf diese Inhalte ist – soweit gesetzlich zulässig – ausgeschlossen. Zwingende gesetzliche Ansprüche bleiben unberührt.',
+      footer: 'Nur zur allgemeinen Information – keine Anlage-, Steuer- oder Rechtsberatung. Angaben und Berechnungen ohne Gewähr; bitte vor Entscheidungen fachkundig prüfen lassen.',
+      accept: 'OK, verstanden',
+    },
     labels: { taxEfficiency: 'Steuereffizienz', score: 'Punktzahl', report: 'Bericht', reports_plural: 'Berichte' },
     etfComparison: {
       search_intro: 'Geben Sie {min}–{max} ISINs ein, um die österreichische Steuereffizienz der ETFs einfach nebeneinander zu vergleichen.',
@@ -192,6 +200,14 @@ const translations = {
       analyse: 'Analyse',
     },
     lang: { de: 'Deutsch (AT)', en: 'English' },
+    disclaimer: {
+      title: 'Important notice',
+      intro: 'The content on this website is provided for general information only. The underlying data may be incomplete, outdated or inaccurate; no guarantee is made as to its accuracy, completeness or currency.',
+      advice: 'Nothing on this website constitutes investment, tax or legal advice, or a personal recommendation. The calculation formulas were developed by the site operator and provide illustrative estimates only. They are not official or legally prescribed methods and do not replace an individual assessment.',
+      reliance: 'Independently verify all information and consult a qualified professional before making investment decisions or taking tax or legal action. You are responsible for decisions made in reliance on this content. To the extent permitted by law, the operator accepts no liability for losses arising from use of or reliance on this content. Nothing in this notice limits rights or liability that cannot lawfully be excluded.',
+      footer: 'For general information only—not investment, tax or legal advice. Data and calculations are not guaranteed; seek qualified advice before making decisions.',
+      accept: 'OK, I understand',
+    },
     labels: { taxEfficiency: 'Tax Efficiency', score: 'Score', report: 'Report', reports_plural: 'Reports' },
     etfComparison: {
       search_intro: 'Enter {min}–{max} ISINs to compare the Austrian tax-efficiency of the ETFs side by side.',
@@ -349,5 +365,4 @@ export function setLocale(locale) {
 export function getLocale() { return current; }
 
 export default translations;
-
 
