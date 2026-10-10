@@ -158,8 +158,8 @@ export default function ComparisonTable({ results }) {
   const sections = SECTIONS(t);
 
   return (
-    <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
-      <Table size="small" stickyHeader>
+    <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <Table size="small" stickyHeader sx={{ minWidth: 720 }}>
 
         {/* ── Column headers ──────────────────────────────────────────────── */}
         <TableHead>

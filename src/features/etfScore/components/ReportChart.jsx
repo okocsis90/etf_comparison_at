@@ -59,9 +59,9 @@ export default function ReportChart({ reportMetrics }) {
   return (
     <>
       <SectionTitle>{t('reportChart.title')}</SectionTitle>
-      <Paper elevation={1} sx={{ p: 2, mb: 4 }}>
-        <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+      <Paper elevation={1} sx={{ p: { xs: 0.5, sm: 2 }, mb: 4, minWidth: 0, overflow: 'hidden' }}>
+        <ResponsiveContainer width="100%" height={280}>
+          <ComposedChart data={chartData} margin={{ top: 8, right: 6, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#dce6e7" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis
@@ -69,14 +69,14 @@ export default function ReportChart({ reportMetrics }) {
               orientation="left"
               tickFormatter={(v) => `€${v.toFixed(0)}`}
               tick={{ fontSize: 11 }}
-              width={72}
+              width={48}
             />
             <YAxis
               yAxisId="pct"
               orientation="right"
               tickFormatter={(v) => `${v.toFixed(2)}%`}
               tick={{ fontSize: 11 }}
-              width={64}
+              width={44}
             />
             <RechartsTooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 13 }} />

@@ -73,14 +73,14 @@ export default function EtfScoreSearch() {
               style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' },
             },
           }}
-          sx={{ width: { xs: '100%', sm: 320 } }}
+          sx={{ width: { xs: '100%', sm: 320 }, minWidth: 0 }}
         />
         <Button
           variant="contained"
           size="large"
           onClick={handleSearch}
           disabled={!canSearch}
-          sx={{ height: 56, px: 4, mt: 0 }}
+          sx={{ height: 52, px: 4, mt: 0, width: { xs: '100%', sm: 'auto' } }}
           >
           {loading ? <CircularProgress size={22} color="inherit" /> : t('actions.analyse')}
         </Button>

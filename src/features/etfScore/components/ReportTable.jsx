@@ -29,7 +29,7 @@ export default function ReportTable({ reportMetrics, avgDeemedIncomeToEtfPricePe
     <>
       <SectionTitle>{t('reportTable.title')}</SectionTitle>
       <TableContainer component={Paper} elevation={1}>
-        <Table size="small">
+        <Table size="small" sx={{ minWidth: 560 }}>
           <TableHead>
             <TableRow sx={{ '& th': { fontWeight: 700, backgroundColor: 'action.hover' } }}>
               <TableCell>{t('reportTable.colDate')}</TableCell>

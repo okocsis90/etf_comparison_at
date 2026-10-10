@@ -95,15 +95,22 @@ function AppInner({ mode, onToggleColorMode }) {
           },
         }}
       >
-        <Toolbar sx={{ alignItems: 'center', minHeight: { xs: 64, sm: 72 }, px: { xs: 2, sm: 3 } }}>
-          <BrandLogo size={36} />
-          <Box sx={{ ml: 1 }}>
-            <Typography variant="h6" fontWeight={800} letterSpacing={0.2} color="common.white">
+        <Toolbar sx={{ alignItems: 'center', minHeight: { xs: 58, sm: 72 }, px: { xs: 1.5, sm: 3 }, gap: { xs: 0, sm: 0.5 } }}>
+          <BrandLogo size={32} />
+          <Box sx={{ ml: { xs: 0.75, sm: 1 }, minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              fontSize={{ xs: '0.9rem', sm: '1.25rem' }}
+              fontWeight={800}
+              letterSpacing={0.1}
+              color="common.white"
+              noWrap
+            >
               {t('appTitle')}
             </Typography>
           </Box>
 
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 1 }, flexShrink: 0 }}>
             <ColorModeToggle mode={mode} onToggle={onToggleColorMode} />
             <LanguageSelector />
           </Box>
@@ -119,8 +126,17 @@ function AppInner({ mode, onToggleColorMode }) {
             textColor="primary"
             indicatorColor="secondary"
             sx={{
-              minHeight: 58,
-              '& .MuiTab-root': { minHeight: 58, fontWeight: 700, textTransform: 'none' },
+              minHeight: { xs: 50, sm: 58 },
+              '& .MuiTab-root': {
+                minHeight: { xs: 50, sm: 58 },
+                minWidth: { xs: 0, sm: 120 },
+                px: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                fontWeight: 700,
+                textTransform: 'none',
+              },
+              '& .MuiTab-iconWrapper': { fontSize: { xs: 18, sm: 20 } },
+              '& .MuiTabs-flexContainer': { justifyContent: { xs: 'space-around', sm: 'flex-start' } },
               '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
             }}
           >
@@ -132,11 +148,11 @@ function AppInner({ mode, onToggleColorMode }) {
       </Box>
 
       {/* ── Page content ─────────────────────────────────────────────────── */}
-      <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 }, flexGrow: 1 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 5 }, px: { xs: 1.5, sm: 3 }, flexGrow: 1 }}>
         <Box
           sx={{
             mb: 3,
-            p: { xs: 2.5, sm: 3.5 },
+            p: { xs: 2, sm: 3.5 },
             borderRadius: 3,
             border: '1px solid',
             borderColor: 'divider',
@@ -145,10 +161,10 @@ function AppInner({ mode, onToggleColorMode }) {
               : 'linear-gradient(115deg, rgba(228, 244, 236, 0.9), rgba(228, 240, 245, 0.75) 72%, #fff)',
           }}
         >
-          <Typography variant="h4" fontWeight={800} gutterBottom>
+          <Typography variant="h4" fontSize={{ xs: '1.45rem', sm: '2.125rem' }} fontWeight={800} gutterBottom>
             {current.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 850, lineHeight: 1.7 }}>
+          <Typography variant="body1" fontSize={{ xs: '0.9rem', sm: '1rem' }} color="text.secondary" sx={{ maxWidth: 850, lineHeight: 1.7 }}>
             {current.description}
           </Typography>
         </Box>
@@ -159,7 +175,7 @@ function AppInner({ mode, onToggleColorMode }) {
             key={i}
             sx={{
               display: activeTab === i ? 'block' : 'none',
-              p: { xs: 2, sm: 3 },
+              p: { xs: 1.5, sm: 3 },
               borderRadius: 3,
               border: '1px solid',
               borderColor: 'divider',

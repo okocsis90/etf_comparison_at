@@ -30,7 +30,14 @@ export default function MetricCard({ title, value, subtitle, color, tooltip }) {
     >
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing={{ xs: 0.2, sm: 0.5 }}
+            sx={{ fontSize: { xs: '0.62rem', sm: '0.75rem' }, lineHeight: 1.35 }}
+          >
             {title}
           </Typography>
           {tooltip && (
@@ -43,6 +50,8 @@ export default function MetricCard({ title, value, subtitle, color, tooltip }) {
           variant="h5"
           fontWeight={700}
           sx={{
+            fontSize: { xs: '1.05rem', sm: '1.5rem' },
+            overflowWrap: 'anywhere',
             color: (theme) => theme.palette.mode === 'dark'
               ? (color ? lighten(valueColor, 0.38) : 'text.primary')
               : color || 'text.primary',

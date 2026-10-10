@@ -79,7 +79,7 @@ export default function EtfComparisonSearch() {
       {/* ── ISIN inputs ────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
         {inputs.map((val, i) => (
-          <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', maxWidth: 380 }}>
+          <Box key={i} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', maxWidth: { sm: 380 }, width: '100%' }}>
             <TextField
               label={t('common.etfLabel', { idx: i + 1 })}
               placeholder={t('common.isinPlaceholder')}
@@ -100,7 +100,7 @@ export default function EtfComparisonSearch() {
                   style: { textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' },
                 },
               }}
-              sx={{ flex: 1, width: { xs: '100%', sm: 320 } }}
+              sx={{ flex: 1, width: { xs: '100%', sm: 320 }, minWidth: 0 }}
             />
             {inputs.length > MIN_ETFS && (
               <IconButton onClick={() => handleRemove(i)} sx={{ mt: 1 }} color="error" size="small">
@@ -112,9 +112,9 @@ export default function EtfComparisonSearch() {
       </Box>
 
       {/* ── Actions ────────────────────────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+      <Box sx={{ display: 'flex', gap: 1.5, mb: 4, flexDirection: { xs: 'column', sm: 'row' } }}>
         {inputs.length < MAX_ETFS && (
-          <Button startIcon={<AddIcon />} variant="outlined" onClick={handleAdd} size="medium">
+          <Button startIcon={<AddIcon />} variant="outlined" onClick={handleAdd} size="medium" fullWidth sx={{ maxWidth: { sm: 220 } }}>
             {t('actions.addEtf')}
           </Button>
         )}
@@ -125,7 +125,7 @@ export default function EtfComparisonSearch() {
           disabled={!canSubmit}
           startIcon={isRecalculate && !loading ? <RefreshIcon /> : null}
           color={isRecalculate ? 'warning' : 'primary'}
-          sx={{ px: 4 }}
+          sx={{ px: 4, width: { xs: '100%', sm: 'auto' } }}
         >
           {loading ? <CircularProgress size={22} color="inherit" /> : isRecalculate ? t('actions.recalculate') : t('actions.compare')}
         </Button>
